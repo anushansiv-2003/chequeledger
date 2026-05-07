@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LedgerFlow">
+<meta name="theme-color" content="#0f1117">
+<title>LedgerFlow</title>
+
+<!-- PWA Manifest inline -->
+<script>
+const manifestData = {
+  name: "LedgerFlow Bank Book",
+  short_name: "LedgerFlow",
+  start_url: ".",
+  display: "standalone",
+  background_color: "#0f1117",
+  theme_color: "#4f7ef8",
+  orientation: "portrait",
+  icons: [{
+    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%234f7ef8'/><text y='130' x='36' font-size='110'>💼</text></svg>",
+    sizes: "192x192", type: "image/svg+xml"
+  }]
+};
+const blob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
+const murl = URL.createObjectURL(blob);
+const ml = document.createElement('link');
+ml.rel = 'manifest'; ml.href = murl;
+document.head.appendChild(ml);
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ══ RESET & ROOT ══ */
+:root {
+  --bg:     #0d0f14;
+  --bg2:    #13161d;
+  --bg3:    #1a1e28;
+  --bg4:    #222738;
+  --border: rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --text:   #eef0f8;
+  --text2:  #8892aa;
+  --text3:  #4e5670;
+  --accent: #4f7ef8;
+  --accent2:#6b97ff;
+  --green:  #22c78a;
+  --red:    #f05a6a;
+  --amber:  #f5a623;
+  --purple: #a78bfa;
+  --r:14px; --rs:8px; --r2:20px;
+  --sh: 0 8px 32px rgba(0,0,0,.5);
+  --sh2:0 2px 8px rgba(0,0,0,.25);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top:    env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:16px}
+h1,h2,h3,h4{font-family:'DM Serif Display',serif;font-weight:400}
+input,select,textarea,button{font-family:'DM Sans',sans-serif}
+button{cursor:pointer;border:none;outline:none}
+::-webkit-scrollbar{width:0;height:0}
+
+/* ══ FIREBASE SETUP SCREEN ══ */
+#firebase-setup{
+  position:fixed;inset:0;background:var(--bg);z-index:2000;
+  display:flex;align-items:flex-start;justify-content:center;padding:24px 24px 48px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background-image:radial-gradient(ellipse at 30% 40%,rgba(79,126,248,.1) 0,transparent 60%);
+}
+.setup-card{
+  width:100%;max-width:440px;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:24px;padding:32px 24px;box-shadow:var(--sh);margin:auto 0;
+}
+.setup-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.setup-logo-icon{width:44px;height:44px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.setup-logo-text{font-family:'DM Serif Display',serif;font-size:22px}
+.setup-logo-text span{color:var(--accent2)}
+.setup-card h2{font-size:22px;margin-bottom:8px}
+.setup-card>p{color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:24px}
+.step-list{counter-reset:s;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.step-item{display:flex;gap:12px;align-items:flex-start;padding:12px;background:var(--bg3);border-radius:var(--rs)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-item p{font-size:12px;color:var(--text2);line-height:1.5}
+.step-item strong{color:var(--text);display:block;font-size:13px;margin-bottom:2px}
+.cfg-input-group{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.cfg-lbl{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.08em;text-transform:uppercase}
+.cfg-input{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);
+  padding:12px 14px;color:var(--text);font-size:13px;outline:none;transition:border .2s;
+  width:100%;font-family:monospace;
+}
+.cfg-input:focus{border-color:var(--accent)}
+.setup-skip{
+  width:100%;padding:10px;text-align:center;color:var(--text2);font-size:12px;
+  cursor:pointer;margin-top:12px;text-decoration:underline;background:none;border:none;
+}
+.setup-skip:hover{color:var(--text)}
+
+/* ══ PIN SCREEN ══ */
+#pin-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:1500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;
+  background-image:radial-gradient(ellipse at 50% 30%,rgba(79,126,248,.12) 0,transparent 65%);
+}
+.pin-logo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:40px}
+.pin-logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 8px 24px rgba(79,126,248,.4)}
+.pin-logo-text{font-family:'DM Serif Display',serif;font-size:24px}
+.pin-logo-text span{color:var(--accent2)}
+.pin-label{font-size:14px;color:var(--text2);margin-bottom:24px;text-align:center}
+.pin-dots{display:flex;gap:16px;margin-bottom:36px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:var(--bg4);border:2px solid var(--border2);transition:all .2s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);transform:scale(1.1)}
+.pin-dot.error{background:var(--red);border-color:var(--red)}
+.pin-dot.success{background:var(--green);border-color:var(--green)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:280px}
+.pin-btn{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:18px 10px;font-size:22px;font-weight:500;color:var(--text);
+  transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.pin-btn:active{background:var(--bg4);transform:scale(.95)}
+.pin-btn.zero{grid-column:2}
+.pin-btn.del{font-size:18px;color:var(--text2);grid-column:3}
+.pin-btn.del:active{color:var(--red)}
+.pin-sub{font-size:9px;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.pin-error{color:var(--red);font-size:13px;margin-top:16px;min-height:20px;text-align:center;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pin-forgot{color:var(--text2);font-size:12px;margin-top:20px;cursor:pointer;text-decoration:underline}
+.pin-setup-label{font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px}
+
+/* ══ AUTH SCREEN ══ */
+#auth-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:1000;
+  display:flex;align-items:flex-start;justify-content:center;padding:24px 24px 48px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overflow-y:auto;
+  background-image:radial-gradient(ellipse at 20% 50%,rgba(79,126,248,.08) 0,transparent 60%),
+    radial-gradient(ellipse at 80% 20%,rgba(167,139,250,.06) 0,transparent 50%);
+}
+.auth-card{
+  width:100%;max-width:400px;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:24px;padding:32px 24px;box-shadow:var(--sh);
+}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.auth-logo-icon{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.auth-logo-text{font-family:'DM Serif Display',serif;font-size:20px}
+.auth-logo-text span{color:var(--accent2)}
+.auth-card h2{font-size:22px;margin-bottom:6px}
+.auth-card>p{color:var(--text2);font-size:13px;margin-bottom:24px}
+.fgrp{margin-bottom:14px}
+.fgrp label{display:block;font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.fgrp input,.fgrp select,.fgrp textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);
+  padding:13px 14px;color:var(--text);font-size:15px;outline:none;transition:border .2s;
+  -webkit-appearance:none;
+}
+.fgrp input:focus,.fgrp select:focus,.fgrp textarea:focus{border-color:var(--accent)}
+.fgrp .hint{font-size:11px;color:var(--text3);margin-top:4px}
+.fgrp .req{color:var(--red)}
+.demo-users{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.demo-u{
+  display:flex;justify-content:space-between;align-items:center;padding:10px 12px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;
+}
+.demo-u:active{background:var(--bg4)}
+.demo-u-info strong{display:block;font-size:13px}
+.demo-u-info span{font-size:11px;color:var(--text2)}
+
+/* ══ MAIN APP LAYOUT ══ */
+#app{position:fixed;inset:0;display:none;flex-direction:column}
+
+/* Top bar */
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:calc(var(--safe-top) + 12px) 16px 12px;
+  background:rgba(13,15,20,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);z-index:100;flex-shrink:0;
+  min-height:calc(var(--safe-top) + 56px);
+}
+.topbar-logo{font-family:'DM Serif Display',serif;font-size:18px;flex:1}
+.topbar-logo span{color:var(--accent2)}
+.topbar-title{font-size:17px;font-weight:500;flex:1;text-align:center}
+.topbar-action{width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:17px;flex-shrink:0}
+.topbar-action:active{background:var(--bg4)}
+.topbar-notif{position:relative}
+.notif-badge{
+  position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;
+  background:var(--red);font-size:9px;font-weight:600;color:#fff;
+  display:none;align-items:center;justify-content:center;border:2px solid var(--bg);
+}
+
+/* Page container */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  padding:16px 16px calc(90px + var(--safe-bottom));
+  display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.page.active{display:block}
+
+/* Bottom nav */
+.bottom-nav{
+  display:flex;align-items:center;
+  background:rgba(13,15,20,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:8px 0 calc(8px + var(--safe-bottom));
+  flex-shrink:0;z-index:100;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;cursor:pointer;transition:all .15s;position:relative;
+  color:var(--text3);
+}
+.nav-item.active{color:var(--accent2)}
+.nav-item svg{width:22px;height:22px;stroke-width:1.8}
+.nav-item span{font-size:10px;font-weight:500;letter-spacing:.01em}
+.nav-item .nav-dot{
+  position:absolute;top:4px;right:calc(50% - 14px);width:7px;height:7px;
+  border-radius:50%;background:var(--red);border:2px solid var(--bg);display:none;
+}
+
+/* FAB */
+.fab{
+  position:fixed;bottom:calc(80px + var(--safe-bottom));right:16px;z-index:90;
+  width:52px;height:52px;border-radius:16px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 4px 20px rgba(79,126,248,.5);
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  transition:all .2s;
+}
+.fab:active{transform:scale(.92)}
+
+/* ══ CARDS & STATS ══ */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;position:relative;overflow:hidden;
+}
+.stat-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+.stat-value{font-family:'DM Serif Display',serif;font-size:22px;line-height:1;margin-bottom:4px}
+.stat-sub{font-size:11px;color:var(--text2)}
+.stat-icon{position:absolute;right:12px;top:12px;width:32px;height:32px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:16px}
+.c-blue{color:var(--accent2)}.c-green{color:var(--green)}.c-red{color:var(--red)}.c-amber{color:var(--amber)}
+.i-blue{background:rgba(79,126,248,.12);color:var(--accent2)}
+.i-green{background:rgba(34,199,138,.12);color:var(--green)}
+.i-red{background:rgba(240,90,106,.12);color:var(--red)}
+.i-amber{background:rgba(245,166,35,.12);color:var(--amber)}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title{font-size:15px;font-weight:500}
+.card-act{display:flex;gap:6px;align-items:center}
+
+/* Transaction list items */
+.txn-item{
+  display:flex;align-items:center;gap:12px;padding:13px 16px;
+  border-bottom:1px solid var(--border);transition:background .15s;
+  cursor:pointer;
+}
+.txn-item:last-child{border-bottom:none}
+.txn-item:active{background:var(--bg3)}
+.txn-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.txn-body{flex:1;min-width:0}
+.txn-body strong{display:block;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txn-body span{font-size:12px;color:var(--text2)}
+.txn-amt{text-align:right;flex-shrink:0}
+.txn-amt strong{display:block;font-size:15px;font-weight:500}
+.txn-amt span{font-size:11px;color:var(--text2)}
+.amt-in{color:var(--green)}
+.amt-out{color:var(--red)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.b-green{background:rgba(34,199,138,.12);color:var(--green)}
+.b-red{background:rgba(240,90,106,.12);color:var(--red)}
+.b-blue{background:rgba(79,126,248,.12);color:var(--accent2)}
+.b-amber{background:rgba(245,166,35,.12);color:var(--amber)}
+.b-gray{background:rgba(139,146,168,.1);color:var(--text2)}
+.b-purple{background:rgba(167,139,250,.12);color:var(--purple)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 18px;border-radius:var(--rs);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:none}
+.btn-primary{background:var(--accent);color:#fff;width:100%}
+.btn-primary:active{background:var(--accent2);transform:scale(.98)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:active{background:var(--bg4)}
+.btn-danger{background:rgba(240,90,106,.1);color:var(--red);border:1px solid rgba(240,90,106,.3)}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:6px}
+.btn-full{width:100%;margin-bottom:8px}
+
+/* ══ MODAL / SHEET ══ */
+.sheet-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  z-index:500;display:none;align-items:flex-end;justify-content:center;
+}
+.sheet-overlay.open{display:flex;animation:fadeIn .2s}
+.sheet{
+  width:100%;max-width:520px;background:var(--bg2);border-radius:24px 24px 0 0;
+  border:1px solid var(--border2);border-bottom:none;
+  max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  animation:slideUp .3s ease;padding-bottom:var(--safe-bottom);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 0}
+.sheet-hdr{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.sheet-title{font-family:'DM Serif Display',serif;font-size:20px}
+.sheet-close{width:30px;height:30px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:14px}
+.sheet-body{padding:0 20px 20px}
+.sheet-footer{padding:0 20px 20px;display:flex;gap:8px}
+
+/* ══ CHEQUE STAGES ══ */
+.stage-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.s-on_hand{background:rgba(139,146,168,.1);color:var(--text2);border:1px solid rgba(139,146,168,.2)}
+.s-deposited{background:rgba(79,126,248,.1);color:var(--accent2);border:1px solid rgba(79,126,248,.2)}
+.s-cleared{background:rgba(34,199,138,.1);color:var(--green);border:1px solid rgba(34,199,138,.2)}
+.s-returned{background:rgba(240,90,106,.1);color:var(--red);border:1px solid rgba(240,90,106,.25)}
+
+.cheque-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.cheque-item:last-child{border-bottom:none}
+.cheque-item:active{background:var(--bg3)}
+.cheq-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cheq-row2{display:flex;align-items:center;justify-content:space-between}
+.cheq-num{font-size:13px;font-weight:500;font-family:monospace;color:var(--text2)}
+.cheq-payer{font-size:15px;font-weight:500}
+.cheq-amount{font-size:16px;font-weight:600}
+.cheq-meta{font-size:11px;color:var(--text2)}
+
+/* ══ ALERTS ══ */
+.alert-banner{border-radius:var(--r);padding:14px 16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start}
+.ab-icon{font-size:20px;flex-shrink:0}
+.ab-body{flex:1}
+.ab-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.ab-desc{font-size:12px;line-height:1.5;color:var(--text2)}
+.ab-warn{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.22)}
+.ab-warn .ab-title{color:var(--amber)}
+.ab-danger{background:rgba(240,90,106,.08);border:1px solid rgba(240,90,106,.22)}
+.ab-danger .ab-title{color:var(--red)}
+.ab-info{background:rgba(79,126,248,.08);border:1px solid rgba(79,126,248,.2)}
+.ab-info .ab-title{color:var(--accent2)}
+.ab-success{background:rgba(34,199,138,.08);border:1px solid rgba(34,199,138,.2)}
+.ab-success .ab-title{color:var(--green)}
+
+/* ══ BALANCE METER ══ */
+.bal-meter{margin-top:8px}
+.bal-track{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.bal-fill{height:100%;border-radius:3px;transition:width .6s}
+.bal-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:3px}
+
+/* ══ TABS ══ */
+.tab-row{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:14px}
+.tab-btn{flex:1;padding:8px 10px;border-radius:var(--rs);font-size:13px;font-weight:500;color:var(--text2);background:none;border:none;transition:all .15s;text-align:center}
+.tab-btn.active{background:var(--bg3);color:var(--text);box-shadow:var(--sh2)}
+.tab-btn:active:not(.active){color:var(--text)}
+
+/* ══ SYNC STATUS ══ */
+.sync-bar{
+  background:var(--bg3);padding:6px 16px;display:flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sync-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse2 2s infinite}
+.sync-dot.offline{background:var(--amber)}
+.sync-dot.syncing{background:var(--accent);animation:pulse2 .8s infinite}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ══ RETURN REASON ══ */
+.reason-item{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border:1px solid var(--border2);border-radius:var(--rs);cursor:pointer;
+  margin-bottom:8px;font-size:14px;transition:all .15s;
+}
+.reason-item:active,.reason-item.sel{border-color:var(--red);background:rgba(240,90,106,.08);color:var(--red)}
+
+/* ══ SECTION HEADERS ══ */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sec-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em}
+.page-title{font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+
+/* ══ SEARCH ══ */
+.search-bar{
+  display:flex;align-items:center;gap:8px;background:var(--bg2);
+  border:1px solid var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;
+}
+.search-bar input{background:none;border:none;outline:none;color:var(--text);font-size:14px;flex:1;-webkit-appearance:none}
+.search-bar svg{color:var(--text3);flex-shrink:0}
+.filter-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+.filter-chip{
+  flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;
+  background:var(--bg2);border:1px solid var(--border2);color:var(--text2);cursor:pointer;
+  white-space:nowrap;transition:all .15s;
+}
+.filter-chip.active{background:rgba(79,126,248,.1);border-color:var(--accent);color:var(--accent2)}
+.filter-chip:active{background:var(--bg3)}
+
+/* ══ CHARTS ══ */
+.mini-chart{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:8px}
+.mini-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.mini-bar{width:100%;border-radius:4px 4px 0 0;min-height:2px;transition:height .8s ease}
+.mini-bar-lbl{font-size:9px;color:var(--text3)}
+
+/* ══ ACCOUNT PILL ══ */
+.acc-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:20px;font-size:11px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.acc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ══ NOTIF PANEL ══ */
+.notif-sheet{}
+.notif-item-row{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border)}
+.notif-item-row:last-child{border-bottom:none}
+.ni-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.ni-body strong{display:block;font-size:13px;font-weight:500;margin-bottom:2px}
+.ni-body span{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* ══ SETUP STEPS (for Firebase) ══ */
+.copy-box{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);
+  padding:10px 12px;font-size:12px;font-family:monospace;color:var(--accent2);
+  word-break:break-all;line-height:1.6;margin-bottom:8px;cursor:pointer;
+}
+.copy-box:active{background:var(--bg4)}
+
+/* ══ PROFILE / SETTINGS ══ */
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--border);
+}
+.settings-row:last-child{border-bottom:none}
+.settings-row-left{display:flex;align-items:center;gap:12px}
+.settings-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.settings-label{font-size:14px;font-weight:500}
+.settings-sub{font-size:12px;color:var(--text2)}
+.toggle{
+  width:46px;height:26px;border-radius:13px;background:var(--bg4);border:1px solid var(--border2);
+  position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;
+}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle::after{
+  content:'';position:absolute;width:20px;height:20px;border-radius:50%;
+  background:#fff;top:2px;left:2px;transition:transform .2s;
+}
+.toggle.on::after{transform:translateX(20px)}
+
+/* ══ TOAST ══ */
+.toast-wrap{position:fixed;top:calc(var(--safe-top) + 70px);left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;align-items:center;gap:8px;width:calc(100% - 32px);max-width:360px;pointer-events:none}
+.toast{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);
+  padding:12px 16px;font-size:13px;color:var(--text);box-shadow:var(--sh);
+  display:flex;align-items:center;gap:10px;width:100%;
+  animation:toastIn .3s ease;pointer-events:all;
+}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--accent)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ EMPTY STATE ══ */
+.empty{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty h3{font-size:16px;color:var(--text);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.6}
+
+/* misc */
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.fm{font-family:monospace}
+.flex{display:flex}.ic{align-items:center}.gap-2{gap:8px}.gap-3{gap:12px}
+.ml-a{margin-left:auto}.mt-1{margin-top:4px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mb-3{margin-bottom:12px}
+.w-full{width:100%}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#fff;flex-shrink:0}
+.av-blue{background:var(--accent)}.av-green{background:var(--green)}.av-purple{background:var(--purple)}.av-amber{background:var(--amber)}
+</style>
+</head>
+<body>
+
+<!-- ══ TOAST CONTAINER ══ -->
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- ══ FIREBASE SETUP SCREEN ══ -->
+<div id="firebase-setup">
+<div class="setup-card">
+  <div class="setup-logo">
+    <div class="setup-logo-icon">💼</div>
+    <div class="setup-logo-text">Ledger<span>Flow</span></div>
+  </div>
+  <h2>Connect Firebase</h2>
+  <p style="color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:20px">Paste your <strong style="color:var(--text)">entire firebaseConfig block</strong> from Firebase below. No need to copy field by field.</p>
+
+  <div id="fb-status-box" style="display:none;border-radius:var(--rs);padding:12px 14px;margin-bottom:16px;font-size:13px"></div>
+
+  <div style="background:var(--bg3);border-radius:var(--rs);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.7">
+    <strong style="color:var(--text);display:block;margin-bottom:6px">How to get your config:</strong>
+    1. <a href="https://console.firebase.google.com" style="color:var(--accent2)">console.firebase.google.com</a><br>
+    2. Click ⚙️ (gear) → <strong style="color:var(--text)">Project settings</strong><br>
+    3. Scroll to <strong style="color:var(--text)">Your apps</strong> → click your web app<br>
+    4. Copy everything from <code style="background:var(--bg4);padding:1px 4px;border-radius:3px">const firebaseConfig = {</code> to the closing <code style="background:var(--bg4);padding:1px 4px;border-radius:3px">};</code><br>
+    5. Paste it in the box below
+  </div>
+
+  <div class="cfg-input-group">
+    <div class="cfg-lbl">Paste firebaseConfig here</div>
+    <textarea class="cfg-input" id="cfg-paste" rows="8" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  authDomain: &quot;your-project.firebaseapp.com&quot;,&#10;  projectId: &quot;your-project-id&quot;,&#10;  storageBucket: &quot;...&quot;,&#10;  messagingSenderId: &quot;...&quot;,&#10;  appId: &quot;1:123...&quot;&#10;};" style="font-family:monospace;font-size:11px;line-height:1.6;resize:vertical"></textarea>
+  </div>
+
+  <button class="btn btn-primary" id="fb-connect-btn" onclick="saveFirebaseConfig()" style="margin-bottom:10px">Connect & Sync →</button>
+  <button class="btn btn-secondary" onclick="clearFirebaseConfig()" style="width:100%;margin-bottom:10px;font-size:13px">🗑 Clear &amp; reset</button>
+  <button class="setup-skip" onclick="skipFirebase()">Skip — use demo mode (no sync)</button>
+
+  <div style="margin-top:16px;padding:12px 14px;background:var(--bg3);border-radius:var(--rs);font-size:12px;color:var(--text3)">
+    ⚠️ <strong style="color:var(--text2)">Important:</strong> Open this file directly in Chrome or Safari on your phone — not inside Claude's preview window. Firebase cannot connect inside Claude.
+  </div>
+</div>
+</div>
+
+<!-- ══ PIN SCREEN ══ -->
+<div id="pin-screen" style="display:none">
+  <div class="pin-logo">
+    <div class="pin-logo-icon">💼</div>
+    <div class="pin-logo-text">Ledger<span>Flow</span></div>
+  </div>
+  <div class="pin-label" id="pin-label">Enter your PIN</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinKey('1')">1</button>
+    <button class="pin-btn" onclick="pinKey('2')">2<div class="pin-sub">ABC</div></button>
+    <button class="pin-btn" onclick="pinKey('3')">3<div class="pin-sub">DEF</div></button>
+    <button class="pin-btn" onclick="pinKey('4')">4<div class="pin-sub">GHI</div></button>
+    <button class="pin-btn" onclick="pinKey('5')">5<div class="pin-sub">JKL</div></button>
+    <button class="pin-btn" onclick="pinKey('6')">6<div class="pin-sub">MNO</div></button>
+    <button class="pin-btn" onclick="pinKey('7')">7<div class="pin-sub">PQRS</div></button>
+    <button class="pin-btn" onclick="pinKey('8')">8<div class="pin-sub">TUV</div></button>
+    <button class="pin-btn" onclick="pinKey('9')">9<div class="pin-sub">WXYZ</div></button>
+    <button class="pin-btn zero" onclick="pinKey('0')">0</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-forgot" onclick="pinForgot()">Forgot PIN? Sign in with password</div>
+</div>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="auth-screen" style="display:none">
+<div class="auth-card">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">💼</div>
+    <div class="auth-logo-text">Ledger<span>Flow</span></div>
+  </div>
+  <h2>Sign in</h2>
+  <p>Bank book for the family</p>
+  <div class="fgrp">
+    <label>Email</label>
+    <input type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+  </div>
+  <div class="fgrp">
+    <label>Password</label>
+    <input type="password" id="login-pwd" placeholder="••••••••" autocomplete="current-password">
+  </div>
+  <button class="btn btn-primary" onclick="login()" style="margin-bottom:16px">Sign In →</button>
+  <hr class="divider">
+  <div class="sec-title" style="margin-bottom:8px">DEMO USERS</div>
+  <div class="demo-users">
+    <div class="demo-u" onclick="fillDemo('admin@family.com','admin123')">
+      <div class="demo-u-info"><strong>👨‍💼 Admin (You / Father)</strong><span>admin@family.com • admin123</span></div>
+      <span class="badge b-blue">Admin</span>
+    </div>
+    <div class="demo-u" onclick="fillDemo('viewer@family.com','view123')">
+      <div class="demo-u-info"><strong>👀 View Only</strong><span>viewer@family.com • view123</span></div>
+      <span class="badge b-gray">Viewer</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+
+  <!-- Topbar -->
+  <div class="topbar" id="topbar">
+    <div class="topbar-logo">Ledger<span style="color:var(--accent2)">Flow</span></div>
+    <button class="topbar-action topbar-notif" onclick="openNotifPanel()" id="notif-btn">
+      🔔
+      <div class="notif-badge" id="notif-badge"></div>
+    </button>
+    <button class="topbar-action" onclick="openSheet('sheet-profile')">
+      <div id="topbar-avatar" style="font-size:16px">👤</div>
+    </button>
+  </div>
+
+  <!-- Sync bar -->
+  <div class="sync-bar" id="sync-bar">
+    <div class="sync-dot offline" id="sync-dot"></div>
+    <span id="sync-label">Demo mode — changes not synced</span>
+  </div>
+
+  <!-- Pages -->
+  <div class="pages">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-home">
+      <div id="alert-banners"></div>
+      <div class="stat-row" id="stat-row"></div>
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">Monthly Flow</div>
+          <span class="badge b-gray" id="month-label"></span>
+        </div>
+        <div style="padding:14px 16px 16px">
+          <div class="flex gap-2 mb-3" style="margin-bottom:10px">
+            <div class="flex ic gap-2"><div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">Income</span></div>
+            <div class="flex ic gap-2"><div style="width:8px;height:8px;border-radius:50%;background:var(--red)"></div><span style="font-size:11px;color:var(--text2)">Expenses</span></div>
+          </div>
+          <div class="mini-chart" id="mini-chart"></div>
+        </div>
+      </div>
+      <div class="sec-hdr"><div class="sec-title">Recent Transactions</div><button class="btn btn-secondary btn-sm" onclick="nav('txns')">View all</button></div>
+      <div class="card" id="recent-list"></div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="page" id="page-txns">
+      <div class="page-title">Transactions</div>
+      <div class="page-sub">All bank entries & exits</div>
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search..." id="txn-search" oninput="renderTxns()">
+      </div>
+      <div class="filter-row" id="txn-type-filters"></div>
+      <div class="card" id="txn-list"></div>
+    </div>
+
+    <!-- CHEQUE REGISTER -->
+    <div class="page" id="page-cheques">
+      <div class="page-title">Cheques</div>
+      <div class="page-sub">Track received & issued cheques</div>
+      <div id="cheque-alerts"></div>
+      <div class="stat-row" id="cheq-stats"></div>
+      <div class="tab-row">
+        <button class="tab-btn active" data-tab="recv" onclick="switchCheqTab('recv',this)">📥 Received</button>
+        <button class="tab-btn" data-tab="issd" onclick="switchCheqTab('issd',this)">📤 Issued</button>
+      </div>
+      <div class="filter-row" id="cheq-stage-filters"></div>
+      <div class="card" id="cheq-list"></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="page-title">Reports</div>
+      <div class="page-sub">Financial insights</div>
+      <div class="stat-row" id="rep-stats"></div>
+      <div class="card mb-3">
+        <div class="card-hdr"><div class="card-title">Income by Type</div></div>
+        <div style="padding:14px 16px 16px" id="income-bars"></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-hdr"><div class="card-title">Expenses by Type</div></div>
+        <div style="padding:14px 16px 16px" id="expense-bars"></div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-hdr"><div class="card-title">⏳ Pending Cheques</div></div>
+        <div id="pending-cheques-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">❌ Returned Cheques</div></div>
+        <div id="returned-cheques-list"></div>
+      </div>
+    </div>
+
+    <!-- ACCOUNTS -->
+    <div class="page" id="page-accounts">
+      <div class="page-title">Accounts</div>
+      <div class="page-sub">Your bank accounts</div>
+      <div id="accounts-list"></div>
+      <button class="btn btn-secondary btn-full" id="add-account-btn" onclick="openSheet('sheet-add-account')" style="margin-top:4px">+ Add Account</button>
+    </div>
+
+  </div><!-- /pages -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="nav('home')" id="nav-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      <span>Home</span>
+    </div>
+    <div class="nav-item" onclick="nav('txns')" id="nav-txns">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      <span>Transactions</span>
+      <div class="nav-dot" id="txn-dot"></div>
+    </div>
+    <div class="nav-item" onclick="nav('cheques')" id="nav-cheques">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M6 10h4M6 14h8M16 10h2"/></svg>
+      <span>Cheques</span>
+      <div class="nav-dot" id="cheq-dot"></div>
+    </div>
+    <div class="nav-item" onclick="nav('reports')" id="nav-reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Reports</span>
+    </div>
+    <div class="nav-item" onclick="nav('accounts')" id="nav-accounts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7"/><rect x="3" y="9" width="18" height="12" rx="1"/></svg>
+      <span>Accounts</span>
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fab" onclick="openAddSheet()">＋</button>
+
+</div><!-- /app -->
+
+<!-- ══ SHEETS ══ -->
+
+<!-- Add Transaction -->
+<div class="sheet-overlay" id="sheet-add-txn">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title" id="add-txn-title">Add Transaction</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-add-txn')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <input type="hidden" id="txn-edit-id">
+    <div id="txn-bal-alert" style="margin-bottom:12px"></div>
+    <div class="fgrp">
+      <label>Type <span class="req">*</span></label>
+      <select id="txn-type" onchange="onTxnTypeChange()">
+        <option value="">— Select —</option>
+        <option value="cheque_deposit">📥 Cheque Deposit (IN)</option>
+        <option value="cash_deposit">💵 Cash Deposit (IN)</option>
+        <option value="online_transfer_in">🔄 Online Transfer In</option>
+        <option value="cheque_payment">📤 Cheque Payment (OUT)</option>
+        <option value="cash_withdrawal">💸 Cash Withdrawal (OUT)</option>
+        <option value="online_transfer_out">🔄 Online Transfer Out</option>
+        <option value="bank_charge">🏦 Bank Charges (OUT)</option>
+      </select>
+    </div>
+    <div class="fgrp">
+      <label>Account <span class="req">*</span></label>
+      <select id="txn-account" onchange="checkTxnBalance()"></select>
+    </div>
+    <div class="fgrp">
+      <label>Date <span class="req">*</span></label>
+      <input type="date" id="txn-date">
+    </div>
+    <div class="fgrp">
+      <label>Description <span class="req">*</span></label>
+      <input type="text" id="txn-desc" placeholder="e.g. Payment from ABC Ltd">
+    </div>
+    <div class="fgrp">
+      <label>Amount (LKR) <span class="req">*</span></label>
+      <input type="number" id="txn-amount" placeholder="0.00" inputmode="decimal" oninput="checkTxnBalance()">
+    </div>
+    <div class="fgrp" id="ref-grp">
+      <label id="ref-lbl">Reference / Cheque No.</label>
+      <input type="text" id="txn-ref" placeholder="e.g. CHQ001234">
+      <div class="hint" id="ref-hint"></div>
+    </div>
+    <div class="fgrp">
+      <label>Status</label>
+      <select id="txn-status">
+        <option value="cleared">Cleared</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+    <div class="fgrp">
+      <label>Notes (optional)</label>
+      <textarea id="txn-notes" rows="2" placeholder="Any details..."></textarea>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-secondary" style="flex:1" onclick="closeSheet('sheet-add-txn')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="saveTxn()">Save</button>
+  </div>
+</div>
+</div>
+
+<!-- Add Cheque -->
+<div class="sheet-overlay" id="sheet-add-cheque">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title" id="add-cheq-title">Add Cheque</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-add-cheque')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <input type="hidden" id="cheq-edit-id">
+    <input type="hidden" id="cheq-dir">
+    <div id="cheq-bal-alert" style="margin-bottom:12px"></div>
+    <div class="fgrp">
+      <label>Cheque No. <span class="req">*</span></label>
+      <input type="text" id="cheq-num" placeholder="e.g. 001234" inputmode="numeric">
+    </div>
+    <div class="fgrp">
+      <label>Account <span class="req">*</span></label>
+      <select id="cheq-account" onchange="checkCheqBal()"></select>
+    </div>
+    <div class="fgrp">
+      <label id="cheq-date-lbl">Date Received <span class="req">*</span></label>
+      <input type="date" id="cheq-date">
+    </div>
+    <div class="fgrp" id="cheq-deposit-grp">
+      <label>Planned Deposit Date</label>
+      <input type="date" id="cheq-deposit-date">
+      <div class="hint">When you'll take this to the bank</div>
+    </div>
+    <div class="fgrp">
+      <label id="cheq-payer-lbl">Received From <span class="req">*</span></label>
+      <input type="text" id="cheq-payer" placeholder="Payer / Payee name">
+    </div>
+    <div class="fgrp">
+      <label>Amount (LKR) <span class="req">*</span></label>
+      <input type="number" id="cheq-amount" placeholder="0.00" inputmode="decimal" oninput="checkCheqBal()">
+    </div>
+    <div class="fgrp">
+      <label>Notes (optional)</label>
+      <textarea id="cheq-notes" rows="2" placeholder="e.g. Post-dated, for rent..."></textarea>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-secondary" style="flex:1" onclick="closeSheet('sheet-add-cheque')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="saveCheque()">Save</button>
+  </div>
+</div>
+</div>
+
+<!-- Cheque Detail / Stage Advance -->
+<div class="sheet-overlay" id="sheet-cheque-detail">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">Cheque Details</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-cheque-detail')">✕</button>
+  </div>
+  <div class="sheet-body" id="cheq-detail-body"></div>
+</div>
+</div>
+
+<!-- Return Reason -->
+<div class="sheet-overlay" id="sheet-return">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">Mark as Returned</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-return')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <input type="hidden" id="ret-cheq-id">
+    <div class="alert-banner ab-danger" style="margin-bottom:14px">
+      <div class="ab-icon">⚠️</div>
+      <div class="ab-body"><div class="ab-title">This will mark the cheque as bounced</div><div class="ab-desc">It will be flagged in reports and alerts.</div></div>
+    </div>
+    <div id="reason-list">
+      <div class="reason-item" onclick="selReason(this,'Insufficient Funds')">💰 Insufficient Funds</div>
+      <div class="reason-item" onclick="selReason(this,'Signature Mismatch')">✍️ Signature Mismatch</div>
+      <div class="reason-item" onclick="selReason(this,'Account Closed')">🔒 Account Closed</div>
+      <div class="reason-item" onclick="selReason(this,'Post-dated Cheque')">📅 Post-dated Cheque</div>
+      <div class="reason-item" onclick="selReason(this,'Payment Stopped by Drawer')">🛑 Payment Stopped</div>
+      <div class="reason-item" onclick="selReason(this,'Other')">📝 Other (specify)</div>
+    </div>
+    <input type="hidden" id="ret-reason">
+    <div class="fgrp" id="ret-other-grp" style="display:none;margin-top:10px">
+      <label>Specify reason</label>
+      <input type="text" id="ret-other-txt" placeholder="Enter return reason">
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-secondary" style="flex:1" onclick="closeSheet('sheet-return')">Cancel</button>
+    <button class="btn btn-danger" style="flex:2" onclick="confirmReturn()">Mark Returned</button>
+  </div>
+</div>
+</div>
+
+<!-- Add Account -->
+<div class="sheet-overlay" id="sheet-add-account">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">Add Account</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-add-account')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="fgrp"><label>Account Name <span class="req">*</span></label><input type="text" id="acc-name" placeholder="e.g. Main Operating Account"></div>
+    <div class="fgrp"><label>Bank Name <span class="req">*</span></label><input type="text" id="acc-bank" placeholder="e.g. Commercial Bank"></div>
+    <div class="fgrp"><label>Account Number <span class="req">*</span></label><input type="text" id="acc-number" placeholder="e.g. 1234567890" inputmode="numeric"></div>
+    <div class="fgrp"><label>Opening Balance (LKR) <span class="req">*</span></label><input type="number" id="acc-balance" placeholder="0.00" inputmode="decimal"></div>
+    <div class="fgrp">
+      <label>Colour</label>
+      <div class="flex gap-2 mt-2" id="color-picks">
+        <div class="color-pick" data-color="#4f7ef8" style="width:32px;height:32px;border-radius:50%;background:#4f7ef8;border:3px solid white;cursor:pointer" onclick="pickColor('#4f7ef8',this)"></div>
+        <div class="color-pick" data-color="#22c78a" style="width:32px;height:32px;border-radius:50%;background:#22c78a;border:1px solid transparent;cursor:pointer" onclick="pickColor('#22c78a',this)"></div>
+        <div class="color-pick" data-color="#f5a623" style="width:32px;height:32px;border-radius:50%;background:#f5a623;border:1px solid transparent;cursor:pointer" onclick="pickColor('#f5a623',this)"></div>
+        <div class="color-pick" data-color="#a78bfa" style="width:32px;height:32px;border-radius:50%;background:#a78bfa;border:1px solid transparent;cursor:pointer" onclick="pickColor('#a78bfa',this)"></div>
+        <div class="color-pick" data-color="#f05a6a" style="width:32px;height:32px;border-radius:50%;background:#f05a6a;border:1px solid transparent;cursor:pointer" onclick="pickColor('#f05a6a',this)"></div>
+      </div>
+      <input type="hidden" id="acc-color" value="#4f7ef8">
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-secondary" style="flex:1" onclick="closeSheet('sheet-add-account')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="saveAccount()">Save Account</button>
+  </div>
+</div>
+</div>
+
+<!-- Profile -->
+<div class="sheet-overlay" id="sheet-profile">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">Profile & Settings</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-profile')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="flex ic gap-3 mb-3" style="padding:16px;background:var(--bg3);border-radius:var(--r);margin-bottom:16px">
+      <div class="avatar av-blue" id="profile-avatar">A</div>
+      <div>
+        <div style="font-size:15px;font-weight:500" id="profile-name">Admin</div>
+        <div style="font-size:12px;color:var(--text2)" id="profile-email">admin@family.com</div>
+        <span class="badge b-blue mt-1" id="profile-role">Admin</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="settings-row" onclick="openChangePIN()">
+        <div class="settings-row-left"><div class="settings-icon" style="background:rgba(79,126,248,.1)">🔐</div><div><div class="settings-label">Change PIN</div><div class="settings-sub">Update your 4-digit PIN</div></div></div>
+        <span style="color:var(--text3)">›</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left"><div class="settings-icon" style="background:rgba(34,199,138,.1)">🔄</div><div><div class="settings-label">Firebase Sync</div><div class="settings-sub" id="sync-status-label">Not connected</div></div></div>
+        <button class="btn btn-secondary btn-sm" onclick="localStorage.removeItem('lf_skip_fb');closeSheet('sheet-profile');document.getElementById('firebase-setup').style.display='flex'">Setup</button>
+      </div>
+      <div class="settings-row" onclick="exportAllCSV()">
+        <div class="settings-row-left"><div class="settings-icon" style="background:rgba(245,166,35,.1)">📊</div><div><div class="settings-label">Export Data</div><div class="settings-sub">Download all transactions as CSV</div></div></div>
+        <span style="color:var(--text3)">›</span>
+      </div>
+      <div class="settings-row" onclick="confirmResetData()">
+        <div class="settings-row-left"><div class="settings-icon" style="background:rgba(240,90,106,.1)">🗑</div><div><div class="settings-label" style="color:var(--red)">Reset All Data</div><div class="settings-sub">Delete all transactions, cheques & accounts</div></div></div>
+        <span style="color:var(--text3)">›</span>
+      </div>
+    </div>
+    <button class="btn btn-danger btn-full mt-3" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+</div>
+
+<!-- Notifications -->
+<div class="sheet-overlay" id="sheet-notifs">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">🔔 Alerts</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-notifs')">✕</button>
+  </div>
+  <div id="notif-list"></div>
+</div>
+</div>
+
+<!-- Add type chooser -->
+<div class="sheet-overlay" id="sheet-add-chooser">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">What to add?</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-add-chooser')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <button class="btn btn-secondary btn-full" style="justify-content:flex-start;gap:12px;margin-bottom:10px;padding:14px 16px" onclick="openAddTxn();closeSheet('sheet-add-chooser')">
+      <span style="font-size:20px">💳</span><div style="text-align:left"><div style="font-weight:500">Transaction</div><div style="font-size:12px;color:var(--text2)">Cash, transfer, bank charge</div></div>
+    </button>
+    <button class="btn btn-secondary btn-full" style="justify-content:flex-start;gap:12px;margin-bottom:10px;padding:14px 16px" onclick="openAddCheq('received');closeSheet('sheet-add-chooser')">
+      <span style="font-size:20px">📥</span><div style="text-align:left"><div style="font-weight:500">Cheque Received</div><div style="font-size:12px;color:var(--text2)">Record a cheque you received</div></div>
+    </button>
+    <button class="btn btn-secondary btn-full" style="justify-content:flex-start;gap:12px;padding:14px 16px" onclick="openAddCheq('issued');closeSheet('sheet-add-chooser')">
+      <span style="font-size:20px">📤</span><div style="text-align:left"><div style="font-weight:500">Cheque Issued</div><div style="font-size:12px;color:var(--text2)">Record a cheque you wrote</div></div>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- Change PIN -->
+<div class="sheet-overlay" id="sheet-change-pin">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">Change PIN</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-change-pin')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="fgrp"><label>Current PIN</label><input type="password" id="old-pin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="fgrp"><label>New PIN</label><input type="password" id="new-pin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="fgrp"><label>Confirm New PIN</label><input type="password" id="new-pin2" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-secondary" style="flex:1" onclick="closeSheet('sheet-change-pin')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="changePIN()">Update PIN</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ FIREBASE SDK ══ -->
+<!-- Firebase SDK — compat version, works on all browsers including mobile -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+// Wrap compat SDK into the same _firebase interface the app expects
+window._firebase = {
+  initializeApp: (cfg, name) => firebase.initializeApp(cfg, name),
+  getFirestore:  (app)       => app.firestore(),
+  getAuth:       (app)       => app.auth(),
+  collection:    (db, col)   => db.collection(col),
+  doc:           (db, col, id) => db.collection(col).doc(id),
+  onSnapshot:    (ref, onNext, onErr) => ref.onSnapshot(onNext, onErr),
+  setDoc:        (ref, data) => ref.set(data),
+  deleteDoc:     (ref)       => ref.delete(),
+  getDocs:       (ref)       => ref.get(),
+  signInWithEmailAndPassword:    (auth, e, p) => auth.signInWithEmailAndPassword(e, p),
+  createUserWithEmailAndPassword:(auth, e, p) => auth.createUserWithEmailAndPassword(e, p),
+  signOut:       (auth)      => auth.signOut(),
+  onAuthStateChanged: (auth, cb) => auth.onAuthStateChanged(cb)
+};
+window._firebaseReady = true;
+dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
+const USERS = [
+  { id:'u1', name:'Admin User', email:'admin@family.com', password:'admin123', role:'admin', initials:'A', avClass:'av-blue' },
+  { id:'u2', name:'Father', email:'father@family.com', password:'admin123', role:'admin', initials:'F', avClass:'av-amber' },
+  { id:'u3', name:'Viewer', email:'viewer@family.com', password:'view123', role:'viewer', initials:'V', avClass:'av-gray' }
+];
+
+let ACCOUNTS = [
+  { id:'ac1', name:'Main Operating', bank:'Commercial Bank', number:'1234567890', openingBalance:2500000, color:'#4f7ef8' },
+  { id:'ac2', name:'Payroll Account', bank:'Bank of Ceylon', number:'9876543210', openingBalance:1000000, color:'#22c78a' },
+  { id:'ac3', name:'Savings', bank:'HNB', number:'5555444433', openingBalance:5000000, color:'#a78bfa' }
+];
+
+let TRANSACTIONS = [
+  { id:'t1', type:'cheque_deposit', accountId:'ac1', date:'2025-04-02', desc:'Payment from ABC Traders', amount:450000, ref:'CHQ001', status:'cleared', notes:'' },
+  { id:'t2', type:'online_transfer_in', accountId:'ac1', date:'2025-04-05', desc:'Rental income', amount:125000, ref:'TRF001', status:'cleared', notes:'' },
+  { id:'t3', type:'cheque_payment', accountId:'ac1', date:'2025-04-08', desc:'XYZ Suppliers', amount:280000, ref:'CHQ201', status:'pending', notes:'' },
+  { id:'t4', type:'cash_deposit', accountId:'ac2', date:'2025-04-10', desc:'Cash sales', amount:95000, ref:'', status:'cleared', notes:'' },
+  { id:'t5', type:'bank_charge', accountId:'ac1', date:'2025-04-12', desc:'Monthly service fee', amount:1500, ref:'', status:'cleared', notes:'' },
+  { id:'t6', type:'cheque_payment', accountId:'ac1', date:'2025-04-15', desc:'Utility bills', amount:38500, ref:'CHQ202', status:'cleared', notes:'' },
+  { id:'t7', type:'online_transfer_in', accountId:'ac2', date:'2025-04-18', desc:'Client advance', amount:200000, ref:'TRF002', status:'cleared', notes:'' },
+  { id:'t8', type:'cash_withdrawal', accountId:'ac1', date:'2025-04-20', desc:'Petty cash', amount:50000, ref:'', status:'cleared', notes:'' },
+  { id:'t9', type:'cheque_deposit', accountId:'ac1', date:'2025-04-28', desc:'DEF Ltd payment', amount:175000, ref:'CHQ002', status:'returned', notes:'Insufficient funds' },
+  { id:'t10', type:'cash_deposit', accountId:'ac3', date:'2025-05-03', desc:'Monthly savings', amount:100000, ref:'', status:'cleared', notes:'' }
+];
+
+let CHEQUES = [
+  { id:'c1', direction:'received', chequeNo:'CHQ-IN-001', accountId:'ac1', dateReceived:'2025-04-02', depositDate:'2025-04-03', payer:'ABC Traders Ltd', amount:450000, stage:'cleared', returnReason:'', notes:'' },
+  { id:'c2', direction:'received', chequeNo:'CHQ-IN-002', accountId:'ac1', dateReceived:'2025-04-28', depositDate:'2025-04-29', payer:'DEF Limited', amount:175000, stage:'returned', returnReason:'Insufficient Funds', notes:'' },
+  { id:'c3', direction:'received', chequeNo:'CHQ-IN-003', accountId:'ac2', dateReceived:'2025-05-05', depositDate:'2025-05-07', payer:'GHI Exports', amount:230000, stage:'on_hand', returnReason:'', notes:'Post-dated' },
+  { id:'c4', direction:'received', chequeNo:'CHQ-IN-004', accountId:'ac1', dateReceived:'2025-05-05', depositDate:tomorrow(), payer:'JKL Holdings', amount:85000, stage:'on_hand', returnReason:'', notes:'' },
+  { id:'c5', direction:'issued', chequeNo:'CHQ-OUT-201', accountId:'ac1', dateReceived:'2025-04-08', depositDate:'', payer:'XYZ Suppliers', amount:280000, stage:'cleared', returnReason:'', notes:'' },
+  { id:'c6', direction:'issued', chequeNo:'CHQ-OUT-202', accountId:'ac2', dateReceived:'2025-04-25', depositDate:'', payer:'Staff Salaries', amount:350000, stage:'on_hand', returnReason:'', notes:'April payroll' }
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let currentUser = null;
+let currentPage = 'home';
+let cheqTab = 'recv';
+let txnTypeFilter = '';
+let cheqStageFilter = '';
+let firebaseDb   = null;
+let firebaseAuth = null;
+let firebaseMode = false;
+let unsubFns = [];
+let nextId = 100;
+let pinBuffer = '';
+let pinMode = 'enter'; // 'enter' | 'setup' | 'confirm' | 'change'
+let pinConfirmTemp = '';
+
+const TXN_TYPES = {
+  cheque_deposit:     { label:'Cheque Deposit', dir:'in', icon:'📥', color:'green' },
+  cash_deposit:       { label:'Cash Deposit', dir:'in', icon:'💵', color:'green' },
+  online_transfer_in: { label:'Transfer In', dir:'in', icon:'🔄', color:'blue' },
+  cheque_payment:     { label:'Cheque Payment', dir:'out', icon:'📤', color:'red' },
+  cash_withdrawal:    { label:'Cash Withdrawal', dir:'out', icon:'💸', color:'red' },
+  online_transfer_out:{ label:'Transfer Out', dir:'out', icon:'🔄', color:'red' },
+  bank_charge:        { label:'Bank Charge', dir:'out', icon:'🏦', color:'amber' }
+};
+const STAGE_LABELS = { on_hand:'On Hand', deposited:'Deposited', cleared:'Cleared', returned:'Returned' };
+const STAGE_ICONS  = { on_hand:'🗂️', deposited:'🏦', cleared:'✅', returned:'❌' };
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function fmt(n){ return 'LKR '+Number(n).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtK(n){ if(n>=1000000) return 'LKR '+(n/1000000).toFixed(1)+'M'; if(n>=1000) return 'LKR '+(n/1000).toFixed(0)+'K'; return 'LKR '+n; }
+function today(){ return new Date().toISOString().split('T')[0]; }
+function tomorrow(){ const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0]; }
+function uid(){ return 'id'+(nextId++)+'_'+Math.random().toString(36).slice(2,6); }
+function getAcc(id){ return ACCOUNTS.find(a=>a.id===id); }
+function daysBetween(d1,d2){ return Math.round((new Date(d2)-new Date(d1))/86400000); }
+function getBalance(accountId){
+  const acc = ACCOUNTS.find(a=>a.id===accountId); if(!acc) return 0;
+  let bal = acc.openingBalance;
+  TRANSACTIONS.filter(t=>t.accountId===accountId&&t.status!=='returned').forEach(t=>{
+    if(TXN_TYPES[t.type]?.dir==='in') bal+=t.amount; else bal-=t.amount;
+  });
+  return bal;
+}
+function accPill(id){
+  const a=getAcc(id); if(!a) return '—';
+  return `<span class="acc-pill"><span class="acc-dot" style="background:${a.color}"></span>${a.name}</span>`;
+}
+
+// ══════════════════════════════════════════════
+//  PIN SYSTEM
+// ══════════════════════════════════════════════
+function getPIN(){ return localStorage.getItem('lf_pin')||''; }
+function setPIN(p){ localStorage.setItem('lf_pin',p); }
+
+function showPinScreen(mode='enter'){
+  pinMode = mode; pinBuffer = ''; pinConfirmTemp = '';
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+  const labels = {
+    enter:'Enter your PIN',
+    setup:'Set up a new PIN',
+    confirm:'Confirm your PIN',
+    change:'Enter current PIN'
+  };
+  document.getElementById('pin-label').textContent = labels[mode]||'Enter PIN';
+  document.getElementById('pin-screen').style.display = 'flex';
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+}
+
+function hidePinScreen(){
+  document.getElementById('pin-screen').style.display = 'none';
+}
+
+function pinKey(d){
+  if(pinBuffer.length>=4) return;
+  pinBuffer += d;
+  updatePinDots();
+  if(pinBuffer.length===4) setTimeout(processPin,150);
+}
+
+function pinDel(){
+  pinBuffer = pinBuffer.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots(state=''){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('pd'+i);
+    el.className='pin-dot';
+    if(i<pinBuffer.length) el.classList.add(state||'filled');
+  }
+}
+
+function processPin(){
+  const stored = getPIN();
+  if(pinMode==='enter'){
+    if(!stored){ pinMode='setup'; pinBuffer=''; document.getElementById('pin-label').textContent='Set up a 4-digit PIN'; updatePinDots(); return; }
+    if(pinBuffer===stored){ updatePinDots('success'); setTimeout(()=>{ hidePinScreen(); showApp(); },300); }
+    else{ updatePinDots('error'); document.getElementById('pin-error').textContent='Incorrect PIN. Try again.'; setTimeout(()=>{ pinBuffer=''; updatePinDots(); document.getElementById('pin-error').textContent=''; },600); }
+  } else if(pinMode==='setup'){
+    pinConfirmTemp=pinBuffer; pinBuffer=''; pinMode='confirm';
+    document.getElementById('pin-label').textContent='Confirm your PIN'; updatePinDots();
+  } else if(pinMode==='confirm'){
+    if(pinBuffer===pinConfirmTemp){ setPIN(pinBuffer); updatePinDots('success'); setTimeout(()=>{ hidePinScreen(); showApp(); },300); }
+    else{ updatePinDots('error'); document.getElementById('pin-error').textContent="PINs don't match. Try again."; setTimeout(()=>{ pinBuffer=''; pinConfirmTemp=''; pinMode='setup'; document.getElementById('pin-label').textContent='Set up a new PIN'; updatePinDots(); document.getElementById('pin-error').textContent=''; },700); }
+  }
+}
+
+function pinForgot(){
+  localStorage.removeItem('lf_pin');
+  hidePinScreen();
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+function openChangePIN(){
+  closeSheet('sheet-profile');
+  document.getElementById('old-pin').value='';
+  document.getElementById('new-pin').value='';
+  document.getElementById('new-pin2').value='';
+  openSheet('sheet-change-pin');
+}
+
+function changePIN(){
+  const old=document.getElementById('old-pin').value;
+  const n1=document.getElementById('new-pin').value;
+  const n2=document.getElementById('new-pin2').value;
+  if(old!==getPIN()&&getPIN()){ toast('Current PIN is incorrect','error'); return; }
+  if(n1.length!==4||!/^\d+$/.test(n1)){ toast('PIN must be 4 digits','error'); return; }
+  if(n1!==n2){ toast("New PINs don't match",'error'); return; }
+  setPIN(n1); closeSheet('sheet-change-pin'); toast('PIN updated successfully','success');
+}
+
+// ══════════════════════════════════════════════
+//  FIREBASE
+// ══════════════════════════════════════════════
+function setFbStatus(type, msg){
+  const el = document.getElementById('fb-status-box');
+  if(!el) return;
+  const styles = {
+    checking: 'background:rgba(79,126,248,.1);border:1px solid rgba(79,126,248,.3);color:var(--accent2)',
+    success:  'background:rgba(34,199,138,.1);border:1px solid rgba(34,199,138,.3);color:var(--green)',
+    error:    'background:rgba(240,90,106,.1);border:1px solid rgba(240,90,106,.3);color:var(--red)',
+  };
+  const icons = { checking:'⏳', success:'✅', error:'❌' };
+  el.style.cssText = styles[type]+';border-radius:var(--rs);padding:12px 14px;margin-bottom:16px;font-size:13px;display:flex;align-items:flex-start;gap:10px';
+  el.innerHTML = `<span style="flex-shrink:0">${icons[type]}</span><span>${msg}</span>`;
+}
+
+function clearFirebaseConfig(){
+  localStorage.removeItem('lf_fb_cfg');
+  localStorage.removeItem('lf_skip_fb');
+  const ta = document.getElementById('cfg-paste');
+  if(ta) ta.value = '';
+  const el = document.getElementById('fb-status-box');
+  if(el){ el.style.display='none'; el.innerHTML=''; }
+  const btn = document.getElementById('fb-connect-btn');
+  if(btn){ btn.textContent='Connect & Sync →'; btn.disabled=false; }
+  toast('Config cleared — paste your new config','info');
+}
+
+function saveFirebaseConfig(){
+  const raw = (document.getElementById('cfg-paste')?.value||'').trim();
+
+  if(!raw){ setFbStatus('error','Please paste your firebaseConfig block first'); return; }
+
+  // Parse key:value pairs from the pasted config block
+  function extract(key){
+    const m = raw.match(new RegExp(key+'\\s*:\\s*["\']([^"\']+)["\']'));
+    return m ? m[1].trim() : '';
+  }
+
+  const cfg = {
+    apiKey:            extract('apiKey'),
+    authDomain:        extract('authDomain'),
+    projectId:         extract('projectId'),
+    storageBucket:     extract('storageBucket'),
+    messagingSenderId: extract('messagingSenderId'),
+    appId:             extract('appId')
+  };
+
+  // Validate
+  if(!cfg.apiKey){    setFbStatus('error','Could not find <strong>apiKey</strong> in your paste. Make sure you copied the full firebaseConfig block.'); return; }
+  if(!cfg.projectId){ setFbStatus('error','Could not find <strong>projectId</strong> in your paste. Make sure you copied the full firebaseConfig block.'); return; }
+  if(!cfg.authDomain){setFbStatus('error','Could not find <strong>authDomain</strong> in your paste.'); return; }
+  if(!cfg.apiKey.startsWith('AIza')){ setFbStatus('error','apiKey looks wrong — it should start with "AIzaSy...". Copy it again from Firebase.'); return; }
+
+  setFbStatus('checking','Connecting to Firebase...');
+  document.getElementById('fb-connect-btn').textContent = 'Connecting...';
+  document.getElementById('fb-connect-btn').disabled = true;
+
+  localStorage.setItem('lf_fb_cfg', JSON.stringify(cfg));
+
+  const doInit = () => {
+    try {
+      const app = firebase.apps.find(a=>a.name==='ledgerflow-new') || firebase.initializeApp(cfg,'ledgerflow-new');
+      firebaseDb   = app.firestore();
+      firebaseAuth = app.auth();
+      firebaseMode = true;
+      setFbStatus('checking','Connected! Loading data...');
+      startFirebaseListeners(()=>{
+        setFbStatus('success','🟢 Live sync is ON! Taking you to the app...');
+        setTimeout(()=>{
+          document.getElementById('firebase-setup').style.display='none';
+          showLoginOrPin();
+        }, 1200);
+      }, ()=>{
+        setFbStatus('error','Connected but Firestore blocked the request.<br><br><strong>Fix:</strong> In Firebase Console → Firestore Database → Rules tab → paste the secure rules shown below → click Publish → try again.');
+        document.getElementById('fb-connect-btn').textContent = 'Connect & Sync →';
+        document.getElementById('fb-connect-btn').disabled = false;
+      });
+    } catch(e){
+      console.error('Firebase init error', e);
+      const msg = e.message||'Unknown error';
+      let hint = 'Double-check your pasted config.';
+      if(msg.includes('duplicate')) hint = 'Reload the page (F5) and try again.';
+      if(msg.includes('api-key')||msg.includes('invalid-api-key')) hint = 'Your API Key is invalid — copy it again.';
+      setFbStatus('error', hint+'<br><small style="opacity:.6">'+msg+'</small>');
+      localStorage.removeItem('lf_fb_cfg');
+      document.getElementById('fb-connect-btn').textContent = 'Connect & Sync →';
+      document.getElementById('fb-connect-btn').disabled = false;
+    }
+  };
+
+  if(window._firebaseReady){ doInit(); }
+  else { window.addEventListener('firebaseReady', doInit, {once:true}); }
+}
+
+function skipFirebase(){
+  localStorage.setItem('lf_skip_fb','1');
+  localStorage.removeItem('lf_fb_cfg');
+  document.getElementById('firebase-setup').style.display='none';
+  showLoginOrPin();
+}
+
+function initFirebase(cfg){
+  if(!window._firebaseReady){ window.addEventListener('firebaseReady',()=>initFirebase(cfg),{once:true}); return; }
+  try{
+    const app = firebase.apps.find(a=>a.name==='ledgerflow') || firebase.initializeApp(cfg,'ledgerflow');
+    firebaseDb   = app.firestore();
+    firebaseAuth = app.auth();
+    firebaseMode = true;
+    setSyncStatus('syncing','Connecting...');
+    firebaseAuth.onAuthStateChanged(fbUser=>{
+      if(fbUser){
+        startFirebaseListeners(
+          ()=>{ setSyncStatus('live','Live sync active'); },
+          ()=>{ setSyncStatus('offline','Sync error — check Firestore rules'); }
+        );
+      } else { setSyncStatus('offline','Not signed in'); }
+    });
+  } catch(e){
+    console.error('Firebase auto-init error',e);
+    setSyncStatus('offline','Could not reconnect — open Settings to reconfigure');
+  }
+}
+
+function startFirebaseListeners(onSuccess, onError){
+  if(!firebaseDb){ if(onError) onError(new Error('No DB')); return; }
+  unsubFns.forEach(f=>f()); unsubFns=[];
+  const cols = ['transactions','cheques','accounts'];
+  let readyCount=0, hadError=false;
+  cols.forEach(name=>{
+    const unsub = firebaseDb.collection(name).onSnapshot(snap=>{
+      const data=snap.docs.map(d=>({...d.data(),id:d.id}));
+      if(name==='transactions') TRANSACTIONS=data;
+      if(name==='cheques')      CHEQUES=data;
+      if(name==='accounts'){    if(data.length) ACCOUNTS=data; }
+      readyCount++;
+      if(readyCount>=cols.length&&!hadError){
+        setSyncStatus('live','Live sync active');
+        if(onSuccess) onSuccess(); refreshCurrentPage(); buildAlerts();
+      }
+    }, err=>{
+      if(hadError) return; hadError=true;
+      console.error('Firestore error',err);
+      const isAuth=err.code==='permission-denied'||err.code==='unauthenticated';
+      setSyncStatus('offline',isAuth?'Permission denied — check Firestore rules':'Sync error');
+      if(onError) onError(err);
+    });
+    unsubFns.push(unsub);
+  });
+}
+
+async function fbSet(colName, id, data){
+  if(!firebaseMode||!firebaseDb) return;
+  try{
+    await firebaseDb.collection(colName).doc(id).set(data);
+  } catch(e){ console.error('fbSet error',e); toast('Sync error — saved locally','error'); }
+}
+
+function setSyncStatus(state, label){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  if(dot){ dot.className='sync-dot '+state; }
+  if(lbl) lbl.textContent=label;
+}
+
+// ══════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════
+function fillDemo(e,p){ document.getElementById('login-email').value=e; document.getElementById('login-pwd').value=p; }
+
+async function login(){
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('login-pwd').value;
+  if(!email||!pass){ toast('Enter your email and password','error'); return; }
+
+  // If Firebase Auth is available, use it
+  if(firebaseMode && firebaseAuth){
+    try{
+      setSyncStatus('syncing','Signing in...');
+      const cred = await firebaseAuth.signInWithEmailAndPassword(email, pass);
+      // Build currentUser from Firebase user + local role lookup
+      const role = localStorage.getItem('lf_role_'+cred.user.uid) || 'admin';
+      const name = localStorage.getItem('lf_name_'+cred.user.uid) || email.split('@')[0];
+      currentUser = { id: cred.user.uid, name, email, role,
+        initials: name[0].toUpperCase(), avClass:'av-blue' };
+      localStorage.setItem('lf_user', JSON.stringify(currentUser));
+      document.getElementById('auth-screen').style.display='none';
+      const pin=getPIN();
+      if(!pin){ showPinScreen('setup'); } else { showApp(); }
+    } catch(e){
+      setSyncStatus('offline','Sign in failed');
+      const msg = e.code||'';
+      if(msg.includes('user-not-found')||msg.includes('wrong-password')||msg.includes('invalid-credential'))
+        toast('Wrong email or password','error');
+      else if(msg.includes('too-many-requests'))
+        toast('Too many attempts — try again in a few minutes','error');
+      else
+        toast('Sign in failed: '+msg,'error');
+    }
+    return;
+  }
+
+  // Fallback: local users (demo mode)
+  const u = USERS.find(x=>x.email.toLowerCase()===email&&x.password===pass);
+  if(!u){ toast('Wrong email or password','error'); return; }
+  currentUser = u;
+  localStorage.setItem('lf_user', JSON.stringify(u));
+  document.getElementById('auth-screen').style.display='none';
+  const pin=getPIN();
+  if(!pin){ showPinScreen('setup'); } else { showApp(); }
+}
+
+async function logout(){
+  if(firebaseMode && firebaseAuth){
+    try{ await firebaseAuth.signOut(); } catch(e){ console.error(e); }
+  }
+  currentUser = null;
+  localStorage.removeItem('lf_user');
+  unsubFns.forEach(f=>f()); unsubFns=[];
+  closeSheet('sheet-profile');
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('firebase-setup').style.display='none';
+  setSyncStatus('offline','Not signed in');
+}
+
+function showLoginOrPin(){
+  const saved = localStorage.getItem('lf_user');
+  if(saved){
+    currentUser = JSON.parse(saved);
+    // If Firebase Auth is ready, check if session is still valid
+    if(firebaseMode && firebaseAuth){
+      const fbUser = firebaseAuth.currentUser;
+      if(fbUser){
+        const pin = getPIN();
+        if(pin){ showPinScreen('enter'); } else { showApp(); }
+      } else {
+        // Session expired — go to login
+        document.getElementById('auth-screen').style.display='flex';
+      }
+    } else {
+      const pin = getPIN();
+      if(pin){ showPinScreen('enter'); } else { showApp(); }
+    }
+  } else {
+    document.getElementById('auth-screen').style.display='flex';
+  }
+}
+
+function showApp(){
+  document.getElementById('app').style.display='flex';
+  document.getElementById('auth-screen').style.display='none';
+  updateProfileUI();
+  populateSelects();
+  renderPage('home');
+  buildAlerts();
+  if(currentUser?.role!=='admin'){
+    document.getElementById('add-account-btn').style.display='none';
+    document.getElementById('fab').style.display='none';
+  }
+  toast('Welcome, '+currentUser.name.split(' ')[0]+' 👋','success');
+}
+
+function updateProfileUI(){
+  if(!currentUser) return;
+  document.getElementById('topbar-avatar').textContent=currentUser.initials||currentUser.name[0];
+  document.getElementById('profile-avatar').textContent=currentUser.initials||currentUser.name[0];
+  document.getElementById('profile-avatar').className='avatar '+(currentUser.avClass||'av-blue');
+  document.getElementById('profile-name').textContent=currentUser.name;
+  document.getElementById('profile-email').textContent=currentUser.email;
+  document.getElementById('profile-role').textContent=currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1);
+  document.getElementById('sync-status-label').textContent=firebaseMode?'Connected (real-time)':'Not connected';
+}
+
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const ni=document.getElementById('nav-'+page);
+  if(ni) ni.classList.add('active');
+  currentPage=page;
+  renderPage(page);
+}
+
+function renderPage(page){
+  if(page==='home') renderHome();
+  if(page==='txns') renderTxns();
+  if(page==='cheques') renderCheques();
+  if(page==='reports') renderReports();
+  if(page==='accounts') renderAccounts();
+}
+
+function refreshCurrentPage(){ renderPage(currentPage); buildAlerts(); }
+
+// ══════════════════════════════════════════════
+//  SELECTS
+// ══════════════════════════════════════════════
+function populateSelects(){
+  ['txn-account','cheq-account'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.innerHTML=ACCOUNTS.map(a=>`<option value="${a.id}">${a.name} (${a.bank})</option>`).join('');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  HOME / DASHBOARD
+// ══════════════════════════════════════════════
+function renderHome(){
+  const totalBal=ACCOUNTS.reduce((s,a)=>s+getBalance(a.id),0);
+  const thisM=TRANSACTIONS.filter(t=>t.date.startsWith('2025-04'));
+  const totalIn=thisM.filter(t=>TXN_TYPES[t.type]?.dir==='in'&&t.status!=='returned').reduce((s,t)=>s+t.amount,0);
+  const totalOut=thisM.filter(t=>TXN_TYPES[t.type]?.dir==='out').reduce((s,t)=>s+t.amount,0);
+  const pending=TRANSACTIONS.filter(t=>t.status==='pending').length;
+
+  document.getElementById('stat-row').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Balance</div><div class="stat-value c-blue">${fmtK(totalBal)}</div><div class="stat-sub">${ACCOUNTS.length} accounts</div><div class="stat-icon i-blue">🏦</div></div>
+    <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value c-green">${fmtK(totalIn)}</div><div class="stat-sub">Income</div><div class="stat-icon i-green">↑</div></div>
+    <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value c-red">${fmtK(totalOut)}</div><div class="stat-sub">Expenses</div><div class="stat-icon i-red">↓</div></div>
+    <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value c-amber">${pending}</div><div class="stat-sub">Items</div><div class="stat-icon i-amber">⏳</div></div>
+  `;
+
+  // mini chart
+  const months=['Jan','Feb','Mar','Apr','May'];
+  const inD=[820000,950000,720000,totalIn,120000];
+  const outD=[680000,720000,840000,totalOut,30000];
+  const mx=Math.max(...inD,...outD,1);
+  const monthLabel=document.getElementById('month-label');
+  if(monthLabel) monthLabel.textContent='Apr 2025';
+  document.getElementById('mini-chart').innerHTML=months.map((m,i)=>`
+    <div class="mini-bar-wrap">
+      <div style="display:flex;gap:2px;align-items:flex-end;flex:1;width:100%">
+        <div class="mini-bar" style="background:var(--green);height:${inD[i]?Math.max(4,(inD[i]/mx)*68)+'px':'2px'};flex:1;opacity:.85"></div>
+        <div class="mini-bar" style="background:var(--red);height:${outD[i]?Math.max(4,(outD[i]/mx)*68)+'px':'2px'};flex:1;opacity:.85"></div>
+      </div>
+      <div class="mini-bar-lbl">${m}</div>
+    </div>`).join('');
+
+  // recent txns
+  const recent=[...TRANSACTIONS].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+  const rl=document.getElementById('recent-list');
+  rl.innerHTML=recent.map(t=>txnItemHTML(t)).join('');
+
+  // dots
+  document.getElementById('txn-dot').style.display=pending?'flex':'none';
+}
+
+function txnItemHTML(t){
+  const tt=TXN_TYPES[t.type]||{label:t.type,dir:'in',icon:'💳',color:'gray'};
+  const isIn=tt.dir==='in';
+  const iconBg=isIn?'rgba(34,199,138,.12)':'rgba(240,90,106,.12)';
+  return `<div class="txn-item" onclick="openTxnDetail('${t.id}')">
+    <div class="txn-icon" style="background:${iconBg}">${tt.icon}</div>
+    <div class="txn-body"><strong>${t.desc}</strong><span>${t.date} · ${accPill(t.accountId)}</span></div>
+    <div class="txn-amt">
+      <strong class="${isIn?'amt-in':'amt-out'}">${isIn?'+':'-'}${fmtK(t.amount)}</strong>
+      <span class="badge ${t.status==='cleared'?'b-green':t.status==='returned'?'b-red':'b-amber'}">${t.status}</span>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  TRANSACTIONS
+// ══════════════════════════════════════════════
+function renderTxns(){
+  // Type filter chips
+  const fc=document.getElementById('txn-type-filters');
+  const types=[['','All'],...Object.entries(TXN_TYPES).map(([k,v])=>[k,v.icon+' '+v.label])];
+  fc.innerHTML=types.map(([k,l])=>`<div class="filter-chip ${txnTypeFilter===k?'active':''}" onclick="setTxnFilter('${k}')">${l}</div>`).join('');
+
+  const search=(document.getElementById('txn-search')?.value||'').toLowerCase();
+  let list=[...TRANSACTIONS].filter(t=>{
+    if(txnTypeFilter&&t.type!==txnTypeFilter) return false;
+    if(search&&!t.desc.toLowerCase().includes(search)&&!t.ref.toLowerCase().includes(search)) return false;
+    return true;
+  }).sort((a,b)=>b.date.localeCompare(a.date));
+
+  const el=document.getElementById('txn-list');
+  el.innerHTML=list.length?list.map(t=>txnItemHTML(t)).join(''):`<div class="empty"><div class="empty-icon">📋</div><h3>No transactions</h3><p>Add your first transaction using the + button</p></div>`;
+}
+
+function setTxnFilter(f){ txnTypeFilter=f; renderTxns(); }
+
+function openTxnDetail(id){
+  const t=TRANSACTIONS.find(x=>x.id===id); if(!t||currentUser?.role==='viewer') return;
+  editTxn(id);
+}
+
+// ══════════════════════════════════════════════
+//  ADD / EDIT TRANSACTION
+// ══════════════════════════════════════════════
+function openAddTxn(){
+  if(currentUser?.role==='viewer'){toast('Viewers cannot add transactions','error');return;}
+  document.getElementById('txn-edit-id').value='';
+  document.getElementById('add-txn-title').textContent='Add Transaction';
+  ['txn-desc','txn-ref','txn-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('txn-amount').value='';
+  document.getElementById('txn-date').value=today();
+  document.getElementById('txn-type').value='';
+  document.getElementById('txn-status').value='cleared';
+  document.getElementById('txn-bal-alert').innerHTML='';
+  onTxnTypeChange();
+  openSheet('sheet-add-txn');
+}
+
+function editTxn(id){
+  const t=TRANSACTIONS.find(x=>x.id===id); if(!t) return;
+  document.getElementById('txn-edit-id').value=id;
+  document.getElementById('add-txn-title').textContent='Edit Transaction';
+  document.getElementById('txn-type').value=t.type;
+  document.getElementById('txn-account').value=t.accountId;
+  document.getElementById('txn-date').value=t.date;
+  document.getElementById('txn-desc').value=t.desc;
+  document.getElementById('txn-amount').value=t.amount;
+  document.getElementById('txn-ref').value=t.ref;
+  document.getElementById('txn-status').value=t.status;
+  document.getElementById('txn-notes').value=t.notes;
+  onTxnTypeChange();
+  openSheet('sheet-add-txn');
+}
+
+function onTxnTypeChange(){
+  const type=document.getElementById('txn-type').value;
+  const rl=document.getElementById('ref-lbl');
+  const rh=document.getElementById('ref-hint');
+  if(type==='cheque_deposit'||type==='cheque_payment'){
+    rl.innerHTML='Cheque No. <span class="req">*</span>';
+    rh.textContent='Required — used for tracking & reconciliation';
+  } else if(type.includes('online')){
+    rl.innerHTML='Transfer Reference';
+    rh.textContent='Bank reference number';
+  } else { rl.innerHTML='Reference (optional)'; rh.textContent=''; }
+  checkTxnBalance();
+}
+
+function checkTxnBalance(){
+  const type=document.getElementById('txn-type').value;
+  if(!type||TXN_TYPES[type]?.dir!=='out') { document.getElementById('txn-bal-alert').innerHTML=''; return; }
+  const accId=document.getElementById('txn-account').value;
+  const amount=parseFloat(document.getElementById('txn-amount').value)||0;
+  if(!accId||!amount) { document.getElementById('txn-bal-alert').innerHTML=''; return; }
+  showBalAlert('txn-bal-alert', accId, amount);
+}
+
+function showBalAlert(elId, accId, amount){
+  const bal=getBalance(accId); const acc=getAcc(accId);
+  const rem=bal-amount; const pct=Math.min(100,(bal/Math.max(amount,1))*100);
+  const barColor=rem>=0?(rem/bal<0.2?'#f5a623':'#22c78a'):'#f05a6a';
+  const el=document.getElementById(elId); if(!el) return;
+  if(rem<0){
+    el.innerHTML=`<div class="alert-banner ab-danger"><div class="ab-icon">💸</div><div class="ab-body"><div class="ab-title">Insufficient Balance — will bounce!</div><div class="ab-desc">Balance: <strong>${fmt(bal)}</strong> · Cheque: <strong>${fmt(amount)}</strong> · Shortfall: <strong>${fmt(Math.abs(rem))}</strong></div><div class="bal-meter"><div class="bal-track"><div class="bal-fill" style="width:${pct}%;background:${barColor}"></div></div><div class="bal-labels"><span>${fmt(bal)}</span><span>${fmt(amount)}</span></div></div></div></div>`;
+  } else if(rem/bal<0.2){
+    el.innerHTML=`<div class="alert-banner ab-warn"><div class="ab-icon">⚡</div><div class="ab-body"><div class="ab-title">Low Balance After This</div><div class="ab-desc">Only <strong>${fmt(rem)}</strong> left in ${acc?.name}</div><div class="bal-meter"><div class="bal-track"><div class="bal-fill" style="width:${pct}%;background:${barColor}"></div></div></div></div></div>`;
+  } else {
+    el.innerHTML=`<div class="alert-banner ab-success"><div class="ab-icon">✅</div><div class="ab-body"><div class="ab-title">Balance OK</div><div class="ab-desc">${fmt(rem)} will remain in ${acc?.name}</div></div></div>`;
+  }
+}
+
+async function saveTxn(){
+  const editId=document.getElementById('txn-edit-id').value;
+  const type=document.getElementById('txn-type').value;
+  const accountId=document.getElementById('txn-account').value;
+  const date=document.getElementById('txn-date').value;
+  const desc=document.getElementById('txn-desc').value.trim();
+  const amount=parseFloat(document.getElementById('txn-amount').value);
+  const ref=document.getElementById('txn-ref').value.trim();
+  const status=document.getElementById('txn-status').value;
+  const notes=document.getElementById('txn-notes').value.trim();
+
+  if(!type){toast('Select a transaction type','error');return;}
+  if(!accountId){toast('Select an account','error');return;}
+  if(!date){toast('Enter a date','error');return;}
+  if(!desc){toast('Description is required','error');return;}
+  if(!amount||amount<=0){toast('Enter a valid amount','error');return;}
+  if((type==='cheque_deposit'||type==='cheque_payment')&&!ref){toast('Cheque number is required','error');return;}
+
+  const txn={type,accountId,date,desc,amount,ref,status,notes};
+  if(editId){
+    const idx=TRANSACTIONS.findIndex(t=>t.id===editId);
+    if(idx>-1){txn.id=editId;TRANSACTIONS[idx]={...TRANSACTIONS[idx],...txn};}
+    await fbSet('transactions',editId,{...txn,id:editId});
+    toast('Transaction updated ✓','success');
+  } else {
+    const id=uid(); txn.id=id;
+    TRANSACTIONS.push(txn);
+    await fbSet('transactions',id,txn);
+    toast('Transaction saved ✓','success');
+  }
+  closeSheet('sheet-add-txn');
+  refreshCurrentPage();
+  buildAlerts();
+}
+
+// ══════════════════════════════════════════════
+//  CHEQUES
+// ══════════════════════════════════════════════
+function switchCheqTab(tab, btn){
+  cheqTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  cheqStageFilter='';
+  renderCheques();
+}
+
+function renderCheques(){
+  // stats
+  const dir=cheqTab==='recv'?'received':'issued';
+  const list=CHEQUES.filter(c=>c.direction===dir);
+  const onHand=list.filter(c=>c.stage==='on_hand').length;
+  const dep=list.filter(c=>c.stage==='deposited').length;
+  const cl=list.filter(c=>c.stage==='cleared').length;
+  const ret=list.filter(c=>c.stage==='returned').length;
+  document.getElementById('cheq-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">On Hand</div><div class="stat-value" style="color:var(--text2)">${onHand}</div><div class="stat-sub">Awaiting deposit</div></div>
+    <div class="stat-card"><div class="stat-label">Deposited</div><div class="stat-value c-blue">${dep}</div><div class="stat-sub">Awaiting clearance</div></div>
+    <div class="stat-card"><div class="stat-label">Cleared</div><div class="stat-value c-green">${cl}</div><div class="stat-sub">Passed</div></div>
+    <div class="stat-card"><div class="stat-label">Returned</div><div class="stat-value c-red">${ret}</div><div class="stat-sub">Bounced</div></div>
+  `;
+
+  // stage filter chips
+  const stages=[['','All'],['on_hand','🗂️ On Hand'],['deposited','🏦 Deposited'],['cleared','✅ Cleared'],['returned','❌ Returned']];
+  document.getElementById('cheq-stage-filters').innerHTML=stages.map(([k,l])=>`<div class="filter-chip ${cheqStageFilter===k?'active':''}" onclick="setCheqFilter('${k}')">${l}</div>`).join('');
+
+  let filtered=list.filter(c=>!cheqStageFilter||c.stage===cheqStageFilter)
+    .sort((a,b)=>b.dateReceived.localeCompare(a.dateReceived));
+
+  const today_=today(); const tom=tomorrow();
+  const el=document.getElementById('cheq-list');
+  if(!filtered.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📄</div><h3>No cheques</h3><p>Add a cheque using the + button</p></div>`; return;
+  }
+  el.innerHTML=filtered.map(c=>{
+    const isOverdue=c.stage==='on_hand'&&c.depositDate&&c.depositDate<today_;
+    const isTomorrow=c.stage==='on_hand'&&c.depositDate===tom;
+    const bal=getBalance(c.accountId);
+    const balOk=dir==='issued'?bal>=c.amount:true;
+    return `<div class="cheque-item" onclick="openCheqDetail('${c.id}')">
+      <div class="cheq-row1">
+        <span class="cheq-num fm">${c.chequeNo}</span>
+        <span class="cheq-amount ${c.direction==='received'?'amt-in':'amt-out'}">${c.direction==='received'?'+':'-'}${fmtK(c.amount)}</span>
+      </div>
+      <div class="cheq-payer">${c.payer}</div>
+      <div class="cheq-row2" style="margin-top:6px">
+        <div class="flex ic gap-2">
+          <span class="stage-pill s-${c.stage}">${STAGE_ICONS[c.stage]} ${STAGE_LABELS[c.stage]}</span>
+          ${isOverdue?'<span class="badge b-red">Overdue</span>':''}
+          ${isTomorrow?'<span class="badge b-amber">Tomorrow</span>':''}
+          ${c.direction==='issued'&&c.stage==='on_hand'&&!balOk?'<span class="badge b-red">⚠ Low Balance</span>':''}
+        </div>
+        <span class="cheq-meta">${c.dateReceived}${c.depositDate&&c.stage==='on_hand'?' · dep '+c.depositDate:''}</span>
+      </div>
+      ${c.stage==='returned'?`<div style="font-size:11px;color:var(--red);margin-top:4px">↩ ${c.returnReason}</div>`:''}
+    </div>`;
+  }).join('');
+
+  // nav dot
+  const hasCheqAlert=CHEQUES.some(c=>(c.stage==='returned')||(c.stage==='on_hand'&&c.depositDate&&(c.depositDate<=tom)));
+  document.getElementById('cheq-dot').style.display=hasCheqAlert?'flex':'none';
+}
+
+function setCheqFilter(f){ cheqStageFilter=f; renderCheques(); }
+
+function openCheqDetail(id){
+  const c=CHEQUES.find(x=>x.id===id); if(!c) return;
+  const bal=getBalance(c.accountId);
+  const balOk=bal>=c.amount;
+  const canEdit=currentUser?.role!=='viewer';
+  let html=`
+    <div style="padding:0 20px 8px">
+      <div class="flex ic gap-3 mb-3" style="margin-bottom:16px">
+        <div style="font-size:40px">${c.direction==='received'?'📥':'📤'}</div>
+        <div>
+          <div style="font-size:22px;font-weight:600;font-family:'DM Serif Display',serif">${fmt(c.amount)}</div>
+          <div style="font-size:13px;color:var(--text2)">${c.direction==='received'?'Received from':'Issued to'}: <strong style="color:var(--text)">${c.payer}</strong></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Cheque No.</div><div style="font-size:14px;font-family:monospace;font-weight:500">${c.chequeNo}</div></div>
+          <div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Account</div><div>${accPill(c.accountId)}</div></div>
+          <div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Date</div><div style="font-size:14px">${c.dateReceived}</div></div>
+          ${c.depositDate?`<div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Deposit Date</div><div style="font-size:14px">${c.depositDate}</div></div>`:''}
+          <div style="grid-column:1/-1"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Stage</div><span class="stage-pill s-${c.stage}">${STAGE_ICONS[c.stage]} ${STAGE_LABELS[c.stage]}</span></div>
+          ${c.notes?`<div style="grid-column:1/-1"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Notes</div><div style="font-size:13px;color:var(--text2)">${c.notes}</div></div>`:''}
+          ${c.returnReason?`<div style="grid-column:1/-1"><div style="font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.06em">Return Reason</div><div style="font-size:13px;color:var(--red)">${c.returnReason}</div></div>`:''}
+        </div>
+      </div>`;
+
+  // Balance check for issued
+  if(c.direction==='issued'&&c.stage==='on_hand'){
+    const rem=bal-c.amount;
+    html+=`<div class="alert-banner ${balOk?'ab-success':'ab-danger'}" style="margin-bottom:14px">
+      <div class="ab-icon">${balOk?'✅':'💸'}</div>
+      <div class="ab-body">
+        <div class="ab-title">${balOk?'Balance sufficient':'Insufficient balance!'}</div>
+        <div class="ab-desc">Current: ${fmt(bal)} · Cheque: ${fmt(c.amount)} · After: ${fmt(rem)}</div>
+        <div class="bal-meter"><div class="bal-track"><div class="bal-fill" style="width:${Math.min(100,(bal/c.amount)*100)}%;background:${balOk?(rem/bal<0.2?'#f5a623':'#22c78a'):'#f05a6a'}"></div></div></div>
+      </div>
+    </div>`;
+  }
+
+  // Stage action buttons
+  if(canEdit){
+    html+='<div style="display:flex;flex-direction:column;gap:8px;padding-bottom:20px">';
+    if(c.stage==='on_hand'){
+      const depositLabel=c.direction==='received'?'🏦 Mark as Deposited to Bank':'🏦 Mark as Presented to Bank';
+      html+=`<button class="btn btn-secondary" onclick="advanceCheque('${c.id}','deposited');closeSheet('sheet-cheque-detail')">${depositLabel}</button>`;
+    }
+    if(c.stage==='deposited'){
+      html+=`<button class="btn btn-success" style="background:rgba(34,199,138,.12);color:var(--green);border:1px solid rgba(34,199,138,.3)" onclick="advanceCheque('${c.id}','cleared');closeSheet('sheet-cheque-detail')">✅ Mark as Cleared / Passed</button>`;
+      html+=`<button class="btn btn-danger" onclick="openReturnSheet('${c.id}');closeSheet('sheet-cheque-detail')">❌ Mark as Returned / Bounced</button>`;
+    }
+    if(c.stage!=='returned'&&c.stage!=='cleared'){
+      html+=`<button class="btn btn-secondary" onclick="openEditCheq('${c.id}');closeSheet('sheet-cheque-detail')">✏️ Edit Details</button>`;
+    }
+    html+='</div>';
+  }
+  html+='</div>';
+  document.getElementById('cheq-detail-body').innerHTML=html;
+  openSheet('sheet-cheque-detail');
+}
+
+async function advanceCheque(id, newStage){
+  const c=CHEQUES.find(x=>x.id===id); if(!c) return;
+  c.stage=newStage;
+  await fbSet('cheques',id,c);
+  const msgs={deposited:'🏦 Marked as deposited',cleared:'✅ Cheque cleared!',};
+  toast(msgs[newStage]||'Updated','success');
+  // Auto-add transaction on clear
+  if(newStage==='cleared'){
+    const txn={
+      id:uid(), type:c.direction==='received'?'cheque_deposit':'cheque_payment',
+      accountId:c.accountId, date:today(), desc:(c.direction==='received'?'Cheque cleared: ':'Payment cleared: ')+c.payer,
+      amount:c.amount, ref:c.chequeNo, status:'cleared', notes:'Auto from cheque register'
+    };
+    TRANSACTIONS.push(txn);
+    await fbSet('transactions',txn.id,txn);
+  }
+  refreshCurrentPage(); buildAlerts();
+}
+
+function openReturnSheet(id){
+  document.getElementById('ret-cheq-id').value=id;
+  document.getElementById('ret-reason').value='';
+  document.getElementById('ret-other-grp').style.display='none';
+  document.querySelectorAll('.reason-item').forEach(r=>r.classList.remove('sel'));
+  openSheet('sheet-return');
+}
+
+function selReason(el, r){
+  document.querySelectorAll('.reason-item').forEach(x=>x.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('ret-reason').value=r;
+  document.getElementById('ret-other-grp').style.display=r==='Other'?'':'none';
+}
+
+async function confirmReturn(){
+  const id=document.getElementById('ret-cheq-id').value;
+  let reason=document.getElementById('ret-reason').value;
+  if(reason==='Other') reason=document.getElementById('ret-other-txt').value.trim()||'Other';
+  if(!reason){toast('Select a return reason','error');return;}
+  const c=CHEQUES.find(x=>x.id===id); if(!c) return;
+  c.stage='returned'; c.returnReason=reason;
+  await fbSet('cheques',id,c);
+  // record return transaction
+  const txn={
+    id:uid(), type:c.direction==='received'?'cheque_deposit':'cheque_payment',
+    accountId:c.accountId, date:today(),
+    desc:`Cheque returned — ${c.payer}: ${reason}`,
+    amount:c.amount, ref:c.chequeNo, status:'returned', notes:reason
+  };
+  TRANSACTIONS.push(txn); await fbSet('transactions',txn.id,txn);
+  closeSheet('sheet-return');
+  toast('❌ Marked as returned: '+reason,'error');
+  refreshCurrentPage(); buildAlerts();
+}
+
+function openAddCheq(dir){
+  if(currentUser?.role==='viewer'){toast('Viewers cannot add cheques','error');return;}
+  document.getElementById('cheq-edit-id').value='';
+  document.getElementById('cheq-dir').value=dir;
+  document.getElementById('add-cheq-title').textContent=dir==='received'?'Add Cheque Received':'Add Cheque Issued';
+  document.getElementById('cheq-date-lbl').innerHTML=(dir==='received'?'Date Received':'Date Issued')+' <span class="req">*</span>';
+  document.getElementById('cheq-payer-lbl').innerHTML=(dir==='received'?'Received From':'Payable To')+' <span class="req">*</span>';
+  document.getElementById('cheq-deposit-grp').style.display=dir==='received'?'':'none';
+  ['cheq-num','cheq-payer','cheq-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cheq-amount').value='';
+  document.getElementById('cheq-date').value=today();
+  document.getElementById('cheq-deposit-date').value=tomorrow();
+  document.getElementById('cheq-bal-alert').innerHTML='';
+  openSheet('sheet-add-cheque');
+}
+
+function openEditCheq(id){
+  const c=CHEQUES.find(x=>x.id===id); if(!c) return;
+  openAddCheq(c.direction);
+  document.getElementById('cheq-edit-id').value=id;
+  document.getElementById('add-cheq-title').textContent='Edit Cheque';
+  document.getElementById('cheq-num').value=c.chequeNo;
+  document.getElementById('cheq-account').value=c.accountId;
+  document.getElementById('cheq-date').value=c.dateReceived;
+  document.getElementById('cheq-deposit-date').value=c.depositDate||'';
+  document.getElementById('cheq-payer').value=c.payer;
+  document.getElementById('cheq-amount').value=c.amount;
+  document.getElementById('cheq-notes').value=c.notes;
+  checkCheqBal();
+}
+
+function checkCheqBal(){
+  const dir=document.getElementById('cheq-dir').value;
+  if(dir!=='issued'){document.getElementById('cheq-bal-alert').innerHTML='';return;}
+  const accId=document.getElementById('cheq-account').value;
+  const amount=parseFloat(document.getElementById('cheq-amount').value)||0;
+  if(!accId||!amount){document.getElementById('cheq-bal-alert').innerHTML='';return;}
+  showBalAlert('cheq-bal-alert',accId,amount);
+}
+
+async function saveCheque(){
+  const editId=document.getElementById('cheq-edit-id').value;
+  const direction=document.getElementById('cheq-dir').value;
+  const chequeNo=document.getElementById('cheq-num').value.trim();
+  const accountId=document.getElementById('cheq-account').value;
+  const dateReceived=document.getElementById('cheq-date').value;
+  const depositDate=document.getElementById('cheq-deposit-date').value;
+  const payer=document.getElementById('cheq-payer').value.trim();
+  const amount=parseFloat(document.getElementById('cheq-amount').value);
+  const notes=document.getElementById('cheq-notes').value.trim();
+
+  if(!chequeNo){toast('Cheque number required','error');return;}
+  if(!accountId){toast('Select an account','error');return;}
+  if(!dateReceived){toast('Date is required','error');return;}
+  if(!payer){toast(direction==='received'?'Payer name required':'Payee name required','error');return;}
+  if(!amount||amount<=0){toast('Enter a valid amount','error');return;}
+
+  const cheq={direction,chequeNo,accountId,dateReceived,depositDate,payer,amount,notes};
+  if(editId){
+    const idx=CHEQUES.findIndex(c=>c.id===editId);
+    if(idx>-1){cheq.id=editId;CHEQUES[idx]={...CHEQUES[idx],...cheq};}
+    await fbSet('cheques',editId,{...cheq,id:editId});
+    toast('Cheque updated ✓','success');
+  } else {
+    const id=uid(); cheq.id=id; cheq.stage='on_hand'; cheq.returnReason='';
+    CHEQUES.push(cheq);
+    await fbSet('cheques',id,cheq);
+    toast(direction==='received'?'📥 Cheque received added':'📤 Cheque issued added','success');
+  }
+  closeSheet('sheet-add-cheque');
+  refreshCurrentPage(); buildAlerts();
+}
+
+// ══════════════════════════════════════════════
+//  REPORTS
+// ══════════════════════════════════════════════
+function renderReports(){
+  const income=TRANSACTIONS.filter(t=>TXN_TYPES[t.type]?.dir==='in'&&t.status!=='returned').reduce((s,t)=>s+t.amount,0);
+  const exp=TRANSACTIONS.filter(t=>TXN_TYPES[t.type]?.dir==='out').reduce((s,t)=>s+t.amount,0);
+  const pend=TRANSACTIONS.filter(t=>t.status==='pending').length;
+  const ret=TRANSACTIONS.filter(t=>t.status==='returned').length;
+  document.getElementById('rep-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Income</div><div class="stat-value c-green">${fmtK(income)}</div><div class="stat-sub">All time</div></div>
+    <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value c-red">${fmtK(exp)}</div><div class="stat-sub">All time</div></div>
+    <div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${income-exp>=0?'c-green':'c-red'}">${fmtK(income-exp)}</div><div class="stat-sub">Position</div></div>
+    <div class="stat-card"><div class="stat-label">Returned</div><div class="stat-value c-red">${ret}</div><div class="stat-sub">Cheques</div></div>
+  `;
+
+  // Income bars
+  const iTypes=['cheque_deposit','cash_deposit','online_transfer_in'];
+  const eTypes=['cheque_payment','cash_withdrawal','online_transfer_out','bank_charge'];
+  const maxI=Math.max(...iTypes.map(k=>TRANSACTIONS.filter(t=>t.type===k&&t.status!=='returned').reduce((s,t)=>s+t.amount,0)),1);
+  const maxE=Math.max(...eTypes.map(k=>TRANSACTIONS.filter(t=>t.type===k).reduce((s,t)=>s+t.amount,0)),1);
+  document.getElementById('income-bars').innerHTML=iTypes.map(k=>{
+    const v=TRANSACTIONS.filter(t=>t.type===k&&t.status!=='returned').reduce((s,t)=>s+t.amount,0);
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:90px;font-size:11px;color:var(--text2);text-align:right">${TXN_TYPES[k].label}</div><div style="flex:1;background:var(--bg3);border-radius:4px;height:8px;overflow:hidden"><div style="width:${v/maxI*100}%;height:100%;border-radius:4px;background:var(--green)"></div></div><div style="width:70px;font-size:11px;color:var(--text2);text-align:right">${fmtK(v)}</div></div>`;
+  }).join('');
+  document.getElementById('expense-bars').innerHTML=eTypes.map(k=>{
+    const v=TRANSACTIONS.filter(t=>t.type===k).reduce((s,t)=>s+t.amount,0);
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:90px;font-size:11px;color:var(--text2);text-align:right">${TXN_TYPES[k].label}</div><div style="flex:1;background:var(--bg3);border-radius:4px;height:8px;overflow:hidden"><div style="width:${v/maxE*100}%;height:100%;border-radius:4px;background:var(--red)"></div></div><div style="width:70px;font-size:11px;color:var(--text2);text-align:right">${fmtK(v)}</div></div>`;
+  }).join('');
+
+  // Pending cheques
+  const pend_cheqs=CHEQUES.filter(c=>c.stage==='on_hand'||c.stage==='deposited');
+  const pl=document.getElementById('pending-cheques-list');
+  pl.innerHTML=pend_cheqs.length?pend_cheqs.map(c=>{
+    const days=daysBetween(c.dateReceived,today());
+    return `<div class="cheque-item" onclick="openCheqDetail('${c.id}')">
+      <div class="cheq-row1"><span class="cheq-num fm">${c.chequeNo}</span><span class="cheq-amount ${c.direction==='received'?'amt-in':'amt-out'}">${fmt(c.amount)}</span></div>
+      <div class="cheq-payer">${c.payer}</div>
+      <div class="cheq-row2" style="margin-top:6px"><span class="stage-pill s-${c.stage}">${STAGE_ICONS[c.stage]} ${STAGE_LABELS[c.stage]}</span><span class="badge ${days>30?'b-red':days>14?'b-amber':'b-green'}">${days}d old</span></div>
+    </div>`;
+  }).join(''):`<div class="empty" style="padding:24px"><div class="empty-icon">✅</div><p>No pending cheques</p></div>`;
+
+  // Returned cheques
+  const ret_cheqs=CHEQUES.filter(c=>c.stage==='returned');
+  const rl=document.getElementById('returned-cheques-list');
+  rl.innerHTML=ret_cheqs.length?ret_cheqs.map(c=>`
+    <div class="cheque-item">
+      <div class="cheq-row1"><span class="cheq-num fm">${c.chequeNo}</span><span class="cheq-amount amt-out">${fmt(c.amount)}</span></div>
+      <div class="cheq-payer">${c.payer}</div>
+      <div style="font-size:11px;color:var(--red);margin-top:4px">↩ ${c.returnReason}</div>
+      <div class="cheq-row2" style="margin-top:6px"><span class="stage-pill s-returned">❌ Returned</span><span class="cheq-meta">${c.dateReceived}</span></div>
+    </div>`)
+  .join(''):`<div class="empty" style="padding:24px"><div class="empty-icon">✅</div><p>No returned cheques</p></div>`;
+}
+
+// ══════════════════════════════════════════════
+//  ACCOUNTS
+// ══════════════════════════════════════════════
+function renderAccounts(){
+  document.getElementById('accounts-list').innerHTML=ACCOUNTS.map(a=>{
+    const bal=getBalance(a.id);
+    const lastTxn=TRANSACTIONS.filter(t=>t.accountId===a.id).sort((x,y)=>y.date.localeCompare(x.date))[0];
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="padding:16px">
+        <div class="flex ic gap-3" style="margin-bottom:14px">
+          <div style="width:44px;height:44px;border-radius:14px;background:${a.color}22;display:flex;align-items:center;justify-content:center;font-size:20px">🏦</div>
+          <div style="flex:1"><div style="font-size:16px;font-weight:500">${a.name}</div><div style="font-size:12px;color:var(--text2)">${a.bank}</div></div>
+          <div style="text-align:right"><div style="font-size:18px;font-weight:600;color:${a.color}">${fmtK(bal)}</div><div style="font-size:11px;color:var(--text2)">Balance</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:12px;border-top:1px solid var(--border)">
+          <div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Account No.</div><div style="font-size:13px;font-family:monospace">${a.number}</div></div>
+          <div><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">Last Activity</div><div style="font-size:13px">${lastTxn?lastTxn.date:'None'}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveAccount(){
+  if(currentUser?.role!=='admin'){toast('Only admins can add accounts','error');return;}
+  const name=document.getElementById('acc-name').value.trim();
+  const bank=document.getElementById('acc-bank').value.trim();
+  const number=document.getElementById('acc-number').value.trim();
+  const ob=parseFloat(document.getElementById('acc-balance').value);
+  const color=document.getElementById('acc-color').value;
+  if(!name||!bank||!number){toast('Fill all required fields','error');return;}
+  if(isNaN(ob)){toast('Enter a valid opening balance','error');return;}
+  const acc={id:uid(),name,bank,number,openingBalance:ob,color};
+  ACCOUNTS.push(acc);
+  await fbSet('accounts',acc.id,acc);
+  populateSelects(); closeSheet('sheet-add-account');
+  renderAccounts(); toast('Account added ✓','success');
+}
+
+function pickColor(c,el){
+  document.getElementById('acc-color').value=c;
+  document.querySelectorAll('.color-pick').forEach(x=>x.style.border='1px solid transparent');
+  el.style.border='3px solid white';
+}
+
+// ══════════════════════════════════════════════
+//  SMART ALERTS
+// ══════════════════════════════════════════════
+function buildAlerts(){
+  const alerts=[];
+  const today_=today(); const tom=tomorrow();
+
+  // Tomorrow deposits
+  const tomDeps=CHEQUES.filter(c=>c.direction==='received'&&c.stage==='on_hand'&&c.depositDate===tom);
+  if(tomDeps.length){
+    const total=tomDeps.reduce((s,c)=>s+c.amount,0);
+    alerts.push({type:'ab-info',icon:'📅',
+      title:`Tomorrow: ${tomDeps.length} cheque${tomDeps.length>1?'s':''} to deposit`,
+      desc:`${tomDeps.map(c=>c.payer).join(', ')} — Total: ${fmt(total)}`});
+  }
+
+  // Overdue
+  const overdue=CHEQUES.filter(c=>c.direction==='received'&&c.stage==='on_hand'&&c.depositDate&&c.depositDate<today_);
+  if(overdue.length) alerts.push({type:'ab-warn',icon:'⚠️',
+    title:`${overdue.length} cheque${overdue.length>1?'s':''} overdue for deposit`,
+    desc:overdue.map(c=>`${c.chequeNo} (${c.payer})`).join(', ')});
+
+  // Returned
+  const ret=CHEQUES.filter(c=>c.stage==='returned');
+  if(ret.length) alerts.push({type:'ab-danger',icon:'❌',
+    title:`${ret.length} returned cheque${ret.length>1?'s':''} need attention`,
+    desc:ret.map(c=>`${c.chequeNo} — ${c.payer}: ${c.returnReason}`).join(' | ')});
+
+  // Issued low balance
+  CHEQUES.filter(c=>c.direction==='issued'&&c.stage==='on_hand').forEach(c=>{
+    const bal=getBalance(c.accountId); const acc=getAcc(c.accountId);
+    if(bal<c.amount) alerts.push({type:'ab-danger',icon:'💸',
+      title:`Low balance: Cheque ${c.chequeNo} to ${c.payer}`,
+      desc:`${acc?.name}: ${fmt(bal)} available, cheque is ${fmt(c.amount)}. Shortfall: ${fmt(c.amount-bal)}`});
+    else if(bal<c.amount*1.2) alerts.push({type:'ab-warn',icon:'⚡',
+      title:`Tight balance: Cheque ${c.chequeNo} to ${c.payer}`,
+      desc:`Only ${fmt(bal-c.amount)} will remain after this cheque clears`});
+  });
+
+  // Update home page banners
+  const banner=document.getElementById('alert-banners');
+  if(banner) banner.innerHTML=alerts.slice(0,3).map((a,i)=>`
+    <div class="alert-banner ${a.type}" style="margin-bottom:10px;animation:fadeIn .3s ease">
+      <div class="ab-icon">${a.icon}</div>
+      <div class="ab-body"><div class="ab-title">${a.title}</div><div class="ab-desc">${a.desc}</div></div>
+      <span onclick="this.parentElement.style.display='none'" style="cursor:pointer;color:var(--text3);padding-left:8px;flex-shrink:0">✕</span>
+    </div>`).join('');
+
+  // Notification panel
+  const urgent=alerts.filter(a=>a.type.includes('danger')||a.type.includes('warn')).length;
+  const nb=document.getElementById('notif-badge');
+  if(nb){ nb.style.display=urgent?'flex':'none'; nb.textContent=urgent||''; }
+
+  // Also update cheque alerts when on cheques page
+  const ca=document.getElementById('cheque-alerts');
+  if(ca) ca.innerHTML=alerts.slice(0,2).map(a=>`
+    <div class="alert-banner ${a.type}" style="margin-bottom:10px">
+      <div class="ab-icon">${a.icon}</div>
+      <div class="ab-body"><div class="ab-title">${a.title}</div><div class="ab-desc">${a.desc}</div></div>
+    </div>`).join('');
+
+  // Notif sheet content
+  const nl=document.getElementById('notif-list');
+  if(nl) nl.innerHTML=alerts.length?alerts.map(a=>`
+    <div class="notif-item-row">
+      <div class="ni-icon">${a.icon}</div>
+      <div class="ni-body"><strong>${a.title}</strong><span>${a.desc}</span></div>
+    </div>`).join(''):`<div class="empty"><div class="empty-icon">✅</div><h3>All clear</h3><p>No alerts right now</p></div>`;
+}
+
+function openNotifPanel(){
+  buildAlerts();
+  openSheet('sheet-notifs');
+}
+
+// ══════════════════════════════════════════════
+//  SHEET / MODAL HELPERS
+// ══════════════════════════════════════════════
+function openSheet(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeSheet(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+
+document.addEventListener('click',e=>{
+  if(e.target.classList.contains('sheet-overlay')) closeSheet(e.target.id);
+});
+
+function openAddSheet(){ openSheet('sheet-add-chooser'); }
+
+// ══════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════
+function toast(msg,type='info'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML=`<span>${{success:'✓',error:'✕',info:'ℹ'}[type]||'ℹ'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(-8px)';t.style.transition='all .3s';setTimeout(()=>t.remove(),300);},3000);
+}
+
+// ══════════════════════════════════════════════
+//  RESET ALL DATA
+// ══════════════════════════════════════════════
+function confirmResetData(){
+  if(currentUser?.role !== 'admin'){ toast('Only admins can reset data','error'); return; }
+  document.getElementById('reset-confirm-input').value = '';
+  closeSheet('sheet-profile');
+  openSheet('sheet-reset');
+}
+
+async function executeReset(){
+  const val = document.getElementById('reset-confirm-input').value.trim().toUpperCase();
+  if(val !== 'RESET'){ toast('Type RESET to confirm','error'); return; }
+
+  TRANSACTIONS = []; CHEQUES = []; ACCOUNTS = [];
+
+  if(firebaseMode && firebaseDb){
+    setSyncStatus('syncing','Deleting data...');
+    try{
+      for(const col of ['transactions','cheques','accounts']){
+        const snap = await firebaseDb.collection(col).get();
+        const dels = snap.docs.map(d => d.ref.delete());
+        await Promise.all(dels);
+      }
+      setSyncStatus('live','Live sync active');
+    } catch(e){
+      console.error('Reset delete error', e);
+      setSyncStatus('offline','Sync error after reset');
+    }
+  }
+
+  closeSheet('sheet-reset');
+  populateSelects();
+  refreshCurrentPage();
+  buildAlerts();
+  toast('✅ All data cleared — fresh start!', 'success');
+}
+
+
+function exportAllCSV(){
+  const rows=[['Date','Account','Type','Description','Reference','Debit','Credit','Status']];
+  TRANSACTIONS.forEach(t=>{
+    const acc=getAcc(t.accountId);
+    const dir=TXN_TYPES[t.type]?.dir;
+    rows.push([t.date,acc?.name||'',TXN_TYPES[t.type]?.label||t.type,t.desc,t.ref,dir==='out'?t.amount:'',dir==='in'?t.amount:'',t.status]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='ledgerflow_transactions.csv';a.click();
+  toast('CSV downloaded','success');
+}
+
+// ══════════════════════════════════════════════
+//  INSTALL PWA
+// ══════════════════════════════════════════════
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  // Show install banner after 3s
+  setTimeout(()=>{
+    if(deferredPrompt&&currentUser) toast('💡 Tap ··· menu → "Add to Home Screen" to install as app','info');
+  },3000);
+});
+
+// Service Worker for offline
+if('serviceWorker' in navigator){
+  const swCode=`
+    const CACHE='lf-v1';
+    const ASSETS=['/'];
+    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+  `;
+  const swBlob=new Blob([swCode],{type:'application/javascript'});
+  const swUrl=URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('input[type=date]').forEach(el=>{ if(!el.value) el.value=today(); });
+
+  const savedCfg = localStorage.getItem('lf_fb_cfg');
+  const skipped  = localStorage.getItem('lf_skip_fb');
+
+  if(savedCfg){
+    // We have a saved config — hide setup, go to login/pin, reconnect in background
+    document.getElementById('firebase-setup').style.display='none';
+    showLoginOrPin();
+    const cfg = JSON.parse(savedCfg);
+    if(window._firebaseReady){ initFirebase(cfg); }
+    else { window.addEventListener('firebaseReady',()=>initFirebase(cfg),{once:true}); }
+
+  } else if(skipped){
+    // User previously chose demo mode
+    document.getElementById('firebase-setup').style.display='none';
+    showLoginOrPin();
+
+  } else {
+    // First time — pre-fill any existing inputs if user typed and page reloaded
+    document.getElementById('firebase-setup').style.display='flex';
+    // Do NOT call showLoginOrPin — let user fill the form first
+  }
+});
+
+// Expose skipFirebase globally (called from HTML onclick)
+window.skipFirebase = skipFirebase;
+</script>
+<!-- Reset Confirmation -->
+<div class="sheet-overlay" id="sheet-reset">
+<div class="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hdr">
+    <div class="sheet-title">Reset All Data</div>
+    <button class="sheet-close" onclick="closeSheet('sheet-reset')">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="alert-banner ab-danger" style="margin-bottom:16px">
+      <div class="ab-icon">⚠️</div>
+      <div class="ab-body">
+        <div class="ab-title">This cannot be undone</div>
+        <div class="ab-desc">All transactions, cheques, and accounts will be permanently deleted — on all devices.</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7">
+      This will delete:<br>
+      • All transactions<br>
+      • All cheques (received &amp; issued)<br>
+      • All bank accounts<br><br>
+      Your login and PIN will stay. Export your data first if you need a backup.
+    </div>
+    <button class="btn btn-secondary btn-full" style="margin-bottom:10px" onclick="exportAllCSV()">📊 Export backup first</button>
+    <div class="fgrp">
+      <label>Type <strong>RESET</strong> to confirm</label>
+      <input type="text" id="reset-confirm-input" placeholder="RESET" style="text-transform:uppercase;letter-spacing:.1em;font-weight:500">
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-secondary" style="flex:1" onclick="closeSheet('sheet-reset')">Cancel</button>
+    <button class="btn btn-danger" style="flex:2" onclick="executeReset()">Delete Everything</button>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
