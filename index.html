@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
@@ -337,6 +337,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
 
       <!-- Account cards -->
+      <div id="db-rules-notice" style="margin:0 16px 14px;background:rgba(245,158,11,.12);border:1px solid #f59e0b;border-radius:12px;padding:12px 14px;font-size:13px;color:#f59e0b;display:none">
+        <strong>No data loading?</strong> Firestore rules may be blocking access.<br>
+        <span style="font-size:12px;opacity:.9">Firebase Console → Firestore Database → Rules → paste rules → Publish</span>
+      </div>
       <div style="padding:0 16px;margin-bottom:20px" id="acct-cards">
         <div class="empty"><div class="empty-icon">🏦</div><div class="empty-text">No accounts yet</div><div class="empty-sub">Tap + Account to add one</div></div>
       </div>
@@ -657,9 +661,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <script>
 'use strict';
 // ── CONFIG ──
-const FB={apiKey:"AIzaSyBH94w_5IOWdL7DXwYkep0RTKs4bAiuJ78",authDomain:"cheque-ledger-a67f5.firebaseapp.com",
-  projectId:"cheque-ledger-a67f5",storageBucket:"cheque-ledger-a67f5.firebasestorage.app",
-  messagingSenderId:"101517119528",appId:"1:101517119528:web:89d3aa9ea805be16e1e51d"};
+const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book-afedf.firebaseapp.com",
+  projectId:"bank-book-afedf",storageBucket:"bank-book-afedf.firebasestorage.app",
+  messagingSenderId:"698563318407",appId:"1:698563318407:web:c6f1ef7c77cc7812301e22"};
 
 // ── STATE ──
 let ACCTS=[],TXNS=[],CHEQS=[],ACTS=[];
@@ -746,12 +750,28 @@ function c(n){return db.collection('users').doc(uid()).collection(n);}
 // ── SUBSCRIBE ──
 function subscribe(){
   setSyncState('connecting');
-  c('accounts').orderBy('createdAt').onSnapshot(s=>{ACCTS=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();setSyncState('live');});
-  c('transactions').orderBy('date','desc').onSnapshot(s=>{TXNS=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();});
-  c('cheques').orderBy('createdAt','desc').onSnapshot(s=>{CHEQS=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();autoClear();});
-  c('activities').orderBy('ts','desc').limit(300).onSnapshot(s=>{ACTS=s.docs.map(d=>({id:d.id,...d.data()}));renderAct();});
-  c('bankentries').onSnapshot(s=>{BANK_ENTRIES={};s.docs.forEach(d=>{BANK_ENTRIES[d.id]=d.data().entries||[];});renderRecon();});
+  const onErr=label=>err=>{
+    console.error(label+' error:',err.code, err.message);
+    setSyncState('err');
+    showDbError(label+': '+err.code+' - '+err.message);
+  };
+  c('accounts').orderBy('createdAt').onSnapshot(s=>{ACCTS=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();setSyncState('live');hideDbError();},onErr('accounts'));
+  c('transactions').orderBy('date','desc').onSnapshot(s=>{TXNS=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();},onErr('transactions'));
+  c('cheques').orderBy('createdAt','desc').onSnapshot(s=>{CHEQS=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();autoClear();},onErr('cheques'));
+  c('activities').orderBy('ts','desc').limit(300).onSnapshot(s=>{ACTS=s.docs.map(d=>({id:d.id,...d.data()}));renderAct();},onErr('activities'));
+  c('bankentries').onSnapshot(s=>{BANK_ENTRIES={};s.docs.forEach(d=>{BANK_ENTRIES[d.id]=d.data().entries||[];});renderRecon();},onErr('bankentries'));
 }
+function showDbError(msg){
+  const nr=document.getElementById('db-rules-notice');if(nr)nr.style.display='block';
+  let el=document.getElementById('db-error-bar');
+  if(!el){el=document.createElement('div');el.id='db-error-bar';
+    Object.assign(el.style,{position:'fixed',top:'58px',left:'0',right:'0',zIndex:'999',
+      background:'#f43f5e',color:'#fff',padding:'10px 16px',fontSize:'13px',fontWeight:'600',
+      lineHeight:'1.5',wordBreak:'break-all'});
+    document.body.appendChild(el);}
+  el.innerHTML='Firebase error: '+msg+'<br><span style="font-weight:400;font-size:12px">Check Firestore rules - must allow read/write for authenticated users</span>';
+}
+function hideDbError(){const el=document.getElementById('db-error-bar');if(el)el.remove();}
 function setSyncState(s){
   const pip=document.getElementById('sync-pip'),txt=document.getElementById('sync-txt');
   pip.className='sync-pip'+(s==='live'?' live':s==='err'?' err':'');
