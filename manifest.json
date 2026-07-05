@@ -1,0 +1,24 @@
+{
+  "name": "Bank Book",
+  "short_name": "BankBook",
+  "description": "Family bank book — cheques, transactions, reconciliation",
+  "start_url": "./app.html",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
