@@ -380,7 +380,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
       <div class="auth-logo-icon">🏦</div>
       <div class="auth-logo-text">Bank<span>Book</span></div>
     </div>
-    <p style="color:var(--t3);font-size:14px">Enter your 4-digit PIN</p>
+    <p style="color:var(--t3);font-size:14px" id="pin-subtitle">Enter your PIN</p>
     <div class="pin-dots">
       <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
       <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
@@ -436,6 +436,11 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <button class="icon-btn" onclick="openSheet('sh-profile')" style="margin-left:6px">👤</button>
   </div>
 
+  <!-- View Only Banner -->
+  <div id="vo-banner" style="display:none;background:var(--amber);padding:8px 14px;display:none;align-items:center;justify-content:center;gap:8px;flex-shrink:0">
+    <span style="font-size:14px">👁️</span>
+    <span style="font-size:12px;font-weight:700;color:#000">View Only Mode — No changes can be made</span>
+  </div>
   <!-- Pages -->
   <div class="pages" id="pages">
 
@@ -740,14 +745,15 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <div class="sheet"><div class="sheet-handle"></div>
   <div class="sheet-hdr"><div class="sheet-title">Settings</div><button class="sheet-close" onclick="closeSheet('sh-profile')">✕</button></div>
   <div class="sheet-body">
-    <div style="text-align:center;padding:10px 0 24px">
-      <div style="font-size:48px;margin-bottom:8px">👤</div>
+    <div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:48px;margin-bottom:8px" id="profile-icon">👤</div>
       <div id="profile-email" style="font-size:16px;font-weight:700"></div>
+      <div id="profile-mode-badge" style="margin-top:6px"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn btn-ghost btn-full" onclick="toggleTheme()">🎨 &nbsp;Switch Theme (Dark / Light)</button>
-      <button class="btn btn-ghost btn-full" onclick="openSetPin()">🔐 &nbsp;Set PIN Lock</button>
-      <button class="btn btn-ghost btn-full" onclick="doExport()">📊 &nbsp;Export to CSV</button>
+      <button class="btn btn-ghost btn-full" id="set-pin-btn" onclick="openSetPin()">🔐 &nbsp;Set PIN Locks</button>
+      <button class="btn btn-ghost btn-full" id="export-btn" onclick="doExport()">📊 &nbsp;Export to CSV</button>
       <button class="btn btn-danger btn-full" style="margin-top:8px" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -756,14 +762,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <!-- Set PIN -->
 <div class="overlay" id="sh-set-pin" onclick="oc(event,this)">
 <div class="sheet"><div class="sheet-handle"></div>
-  <div class="sheet-hdr"><div class="sheet-title">Set PIN Lock</div><button class="sheet-close" onclick="closeSheet('sh-set-pin')">✕</button></div>
+  <div class="sheet-hdr"><div class="sheet-title">Set PIN Locks</div><button class="sheet-close" onclick="closeSheet('sh-set-pin')">✕</button></div>
   <div class="sheet-body">
-    <div class="fgrp"><label>New PIN (4 digits)</label><input type="password" id="np1" maxlength="4" inputmode="numeric" placeholder="••••"></div>
-    <div class="fgrp"><label>Confirm PIN</label><input type="password" id="np2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="alert alert-blue" style="margin-bottom:16px">
+      <div class="alert-icon">🔐</div>
+      <div><div class="alert-title">Two PINs</div><div class="alert-desc">Admin PIN gives full access. View-Only PIN lets others see everything but not make any changes.</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">🔑 Admin PIN (Full Access)</div>
+    <div class="fgrp"><label>Admin PIN (4 digits)</label><input type="password" id="np1" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fgrp"><label>Confirm Admin PIN</label><input type="password" id="np2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--t1);margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border)">👁️ View-Only PIN (Read Only)</div>
+    <div class="fgrp"><label>View-Only PIN (4 digits)</label><input type="password" id="vp1" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fgrp"><label>Confirm View-Only PIN</label><input type="password" id="vp2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <p class="hint">Leave View-Only PIN blank to disable it.</p>
   </div>
   <div class="sheet-footer">
     <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-set-pin')">Cancel</button>
-    <button class="btn btn-primary" style="flex:2" onclick="doSavePin()">Save PIN</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doSavePin()">Save PINs</button>
   </div>
 </div></div>
 
@@ -780,6 +795,7 @@ const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book
 
 // ── STATE ──
 let ACCTS=[],TXNS=[],CHEQS=[],ACTS=[];
+let VIEW_ONLY=false; // true when logged in with view-only PIN
 let BANK_ENTRIES={}; // acctId -> [{date,type,desc,amount,matched,id}]
 let db=null,auth=null,me=null;
 let curPage='home',cheqTab='received',txnFilt='all',actFilt='all';
@@ -807,8 +823,16 @@ function pinKey(k){
   if(pinBuf.length>=4)return;
   pinBuf+=k;updatePinUI();
   if(pinBuf.length===4){
-    if(pinBuf===localStorage.getItem('bb_pin')){startApp();}
-    else{document.getElementById('pin-err').textContent='Wrong PIN. Try again.';pinBuf='';updatePinUI();}
+    const adminPin=localStorage.getItem('bb_pin');
+    const viewPin=localStorage.getItem('bb_view_pin');
+    if(adminPin&&pinBuf===adminPin){
+      VIEW_ONLY=false;startApp();
+    } else if(viewPin&&pinBuf===viewPin){
+      VIEW_ONLY=true;startApp();
+    } else {
+      document.getElementById('pin-err').textContent='Wrong PIN. Try again.';
+      pinBuf='';updatePinUI();
+    }
   }
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updatePinUI();document.getElementById('pin-err').textContent='';}
@@ -817,9 +841,20 @@ function gotoAuth(){document.getElementById('pin-screen').style.display='none';d
 function openSetPin(){closeSheet('sh-profile');openSheet('sh-set-pin');}
 function doSavePin(){
   const a=document.getElementById('np1').value,b=document.getElementById('np2').value;
-  if(!/^\d{4}$/.test(a)){toast('PIN must be 4 digits');return;}
-  if(a!==b){toast('PINs do not match');return;}
-  localStorage.setItem('bb_pin',a);closeSheet('sh-set-pin');toast('PIN saved ✓');
+  const va=document.getElementById('vp1').value,vb=document.getElementById('vp2').value;
+  if(!/^\d{4}$/.test(a)){toast('Admin PIN must be 4 digits');return;}
+  if(a!==b){toast('Admin PINs do not match');return;}
+  if(va&&va.length>0){
+    if(!/^\d{4}$/.test(va)){toast('View-Only PIN must be 4 digits');return;}
+    if(va!==vb){toast('View-Only PINs do not match');return;}
+    if(va===a){toast('View-Only PIN must be different from Admin PIN');return;}
+    localStorage.setItem('bb_view_pin',va);
+  } else {
+    localStorage.removeItem('bb_view_pin');
+  }
+  localStorage.setItem('bb_pin',a);
+  closeSheet('sh-set-pin');
+  toast('PINs saved ✓');
 }
 
 // ── FIREBASE ──
@@ -853,11 +888,30 @@ function startApp(){
   document.getElementById('app').style.display='block';
   document.getElementById('profile-email').textContent=me?.email||'';
   setGreeting();
+  applyViewOnlyMode();
   subscribe();
   setInterval(autoClear,5*60*1000);
   autoClear();
 }
+function applyViewOnlyMode(){
+  const banner=document.getElementById('vo-banner');
+  if(VIEW_ONLY){
+    banner.style.display='flex';
+    // Hide all add/edit/delete buttons in topbar and page headers
+    document.querySelectorAll('.ph .btn, .qa-btn, #cheq-detail-footer .btn-primary, #cheq-detail-footer .btn-danger, #cheq-detail-footer .btn-success').forEach(b=>{
+      if(!b.classList.contains('btn-ghost')||b.textContent.includes('Edit')||b.textContent.includes('Del')){
+        b.style.display='none';
+      }
+    });
+  } else {
+    banner.style.display='none';
+  }
+}
 function uid(){return me.uid;}
+function guardVO(){
+  if(VIEW_ONLY){toast('👁️ View Only — no changes allowed');return true;}
+  return false;
+}
 function c(n){return db.collection('users').doc(uid()).collection(n);}
 
 // ── SUBSCRIBE ──
@@ -899,6 +953,7 @@ function log(type,text,color){
 
 // ── ACCOUNTS ──
 function doAddAcct(){
+  if(guardVO())return;
   const name=g('aa-name').trim(),bank=g('aa-bank').trim(),num=g('aa-num').trim(),bal=parseFloat(g('aa-bal'))||0;
   if(!name){toast('Account name is required');return;}
   c('accounts').add({name,bank,number:num,openingBalance:bal,createdAt:fts()}).then(()=>{
@@ -928,6 +983,7 @@ function txnTypeChange(){
   document.getElementById('txn-to-grp').style.display=document.getElementById('txn-type').value==='transfer'?'':'none';
 }
 function doSaveTxn(){
+  if(guardVO())return;
   const eid=g('txn-edit-id'),acct=g('txn-acct'),type=g('txn-type'),amt=parseFloat(g('txn-amt'))||0,
     date=g('txn-date'),desc=g('txn-desc').trim(),ref=g('txn-ref').trim(),toAcct=g('txn-to-acct');
   if(!acct||!amt||!date){toast('Fill account, amount and date');return;}
@@ -949,6 +1005,7 @@ function editTxn(id){
   openSheet('sh-add-txn');
 }
 function delTxn(id){
+  if(guardVO())return;
   if(!confirm('Delete this transaction?'))return;
   const t=TXNS.find(x=>x.id===id);
   c('transactions').doc(id).delete().then(()=>{log('txn',`Transaction deleted: ${t?.desc||t?.type}`,'#f43f5e');toast('Deleted');});
@@ -956,6 +1013,7 @@ function delTxn(id){
 
 // ── CHEQUES ──
 function openAddCheque(dir){
+  if(guardVO())return;
   sv('cheq-edit-id','');sv('cheq-dir',dir);
   document.getElementById('cheq-sh-title').textContent=dir==='recv'?'Receive Cheque':'Issue Cheque';
   fillAcctSelects();sv('cheq-date',today());
@@ -963,6 +1021,7 @@ function openAddCheque(dir){
   openSheet('sh-add-cheq');
 }
 function doSaveCheq(){
+  if(guardVO())return;
   const eid=g('cheq-edit-id'),dir=g('cheq-dir'),party=g('cheq-party').trim(),no=g('cheq-no').trim(),
     amt=parseFloat(g('cheq-amt'))||0,date=g('cheq-date'),bank=g('cheq-bank').trim(),
     acct=g('cheq-acct'),notes=g('cheq-notes').trim();
@@ -978,6 +1037,7 @@ function doSaveCheq(){
   }
 }
 function setStage(id,stage,extra={}){
+  if(guardVO())return;
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({stage,...extra,updatedAt:fts()}).then(()=>{
     log('cheque',`Cheque #${q?.no} → ${stage}`,'#a78bfa');
@@ -1064,6 +1124,7 @@ function editCheq(id){
   openSheet('sh-add-cheq');
 }
 function delCheq(id){
+  if(guardVO())return;
   if(!confirm('Delete this cheque?'))return;
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).delete().then(()=>{log('cheque',`Cheque #${q?.no} deleted`,'#f43f5e');closeSheet('sh-cheq-detail');toast('Deleted');});
@@ -1072,6 +1133,7 @@ function delCheq(id){
 // ── TRANSFER ──
 function openTransfer(id){closeSheet('sh-cheq-detail');sv('tr-cheq-id',id);sv('tr-date',today());sv('tr-to','');sv('tr-notes','');openSheet('sh-transfer');}
 function doTransfer(){
+  if(guardVO())return;
   const id=g('tr-cheq-id'),to=g('tr-to').trim(),date=g('tr-date'),notes=g('tr-notes').trim();
   if(!to){toast('Enter the party name');return;}
   const q=CHEQS.find(x=>x.id===id);
@@ -1083,6 +1145,7 @@ function doTransfer(){
 // ── COLLECT ──
 function openCollect(id){closeSheet('sh-cheq-detail');sv('col-cheq-id',id);sv('col-date',today());openSheet('sh-collect');}
 function doCollect(){
+  if(guardVO())return;
   const id=g('col-cheq-id'),date=g('col-date'),method=g('col-method'),notes=g('col-notes').trim();
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({collectedBack:true,collectedDate:date,collectedMethod:method,collectedNotes:notes,updatedAt:fts()}).then(()=>{
@@ -1135,6 +1198,7 @@ function renderBE(){
     </div>`).join('');
 }
 function runRecon(){
+  if(guardVO())return;
   const acct=g('rs-acct'),date=g('rs-date');
   if(!acct){toast('Select an account');return;}
   if(tempBE.length){
@@ -1397,6 +1461,7 @@ function renderAct(){
       </div>`).join('')}`).join('');
 }
 function clearActivity(){
+  if(guardVO())return;
   if(!confirm('Clear all activity?'))return;
   ACTS.forEach(a=>c('activities').doc(a.id).delete());toast('Cleared');
 }
@@ -1443,6 +1508,22 @@ function showPage(name){
 
 // ── SHEETS ──
 function openSheet(id){
+  if(id==='sh-profile'){
+    document.getElementById('profile-email').textContent=me?.email||'';
+    const badge=document.getElementById('profile-mode-badge');
+    const icon=document.getElementById('profile-icon');
+    if(VIEW_ONLY){
+      badge.innerHTML='<span class="badge badge-amber" style="font-size:12px;padding:5px 12px">👁️ View Only Mode</span>';
+      icon.textContent='👁️';
+      document.getElementById('set-pin-btn').style.display='none';
+      document.getElementById('export-btn').style.display='none';
+    } else {
+      badge.innerHTML='<span class="badge badge-green" style="font-size:12px;padding:5px 12px">🔑 Admin Mode</span>';
+      icon.textContent='👤';
+      document.getElementById('set-pin-btn').style.display='';
+      document.getElementById('export-btn').style.display='';
+    }
+  }
   if(id==='sh-add-txn'){fillAcctSelects();sv('txn-edit-id','');sv('txn-sh-title','Add Transaction');sv('txn-date',today());txnTypeChange();}
   if(id==='sh-recon-setup'){fillAcctSelects();sv('rs-date',today());renderBE();}
   document.getElementById(id).classList.add('open');
