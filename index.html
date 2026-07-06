@@ -597,7 +597,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fgrp"><label>Account Name *</label><input id="aa-name" placeholder="e.g. Main Savings"></div>
     <div class="fgrp"><label>Bank Name</label><input id="aa-bank" placeholder="e.g. Commercial Bank of Ceylon"></div>
     <div class="fgrp"><label>Account Number</label><input id="aa-num" placeholder="Optional"></div>
-    <div class="fgrp"><label>Opening Balance (Rs.)</label><input type="number" id="aa-bal" value="0" placeholder="0.00"></div>
+    <div class="fgrp"><label>Opening Balance (Rs.)</label><input type="text" inputmode="decimal" id="aa-bal" value="0" placeholder="0.00" oninput="fmtAmt(this)"></div>
   </div>
   <div class="sheet-footer">
     <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-add-acct')">Cancel</button>
@@ -623,7 +623,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     </div>
     <div class="fgrp" id="txn-to-grp" style="display:none"><label>Transfer To Account *</label><select id="txn-to-acct"></select></div>
     <div class="frow">
-      <div class="fgrp"><label>Amount (Rs.) *</label><input type="number" id="txn-amt" placeholder="0.00"></div>
+      <div class="fgrp"><label>Amount (Rs.) *</label><input type="text" inputmode="decimal" id="txn-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
       <div class="fgrp"><label>Date *</label><input type="date" id="txn-date"></div>
     </div>
     <div class="fgrp"><label>Description</label><input id="txn-desc" placeholder="What is this for?"></div>
@@ -645,13 +645,12 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fgrp"><label>Party Name *</label><input id="cheq-party" placeholder="Who gave / who received this cheque?"></div>
     <div class="frow">
       <div class="fgrp"><label>Cheque No. *</label><input id="cheq-no" placeholder="001234"></div>
-      <div class="fgrp"><label>Amount (Rs.) *</label><input type="number" id="cheq-amt" placeholder="0.00"></div>
+      <div class="fgrp"><label>Amount (Rs.) *</label><input type="text" inputmode="decimal" id="cheq-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
     </div>
     <div class="frow">
       <div class="fgrp"><label>Cheque Date *</label><input type="date" id="cheq-date"></div>
       <div class="fgrp"><label>Drawn on Bank</label><input id="cheq-bank" placeholder="Bank name"></div>
     </div>
-    <div class="fgrp"><label>Our Account</label><select id="cheq-acct"></select></div>
     <div class="fgrp"><label>Notes</label><input id="cheq-notes" placeholder="Optional"></div>
   </div>
   <div class="sheet-footer">
@@ -709,6 +708,23 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div></div>
 
+<!-- Deposit Cheque Sheet -->
+<div class="overlay" id="sh-deposit" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Deposit Cheque</div><button class="sheet-close" onclick="closeSheet('sh-deposit')">✕</button></div>
+  <div class="sheet-body">
+    <input type="hidden" id="dep-cheq-id">
+    <div id="dep-cheq-info" style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:16px"></div>
+    <div class="fgrp"><label>Deposit to Account *</label><select id="dep-acct"></select></div>
+    <div class="fgrp"><label>Deposit Date</label><input type="date" id="dep-date"></div>
+    <div class="fgrp"><label>Notes</label><input id="dep-notes" placeholder="Optional"></div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-deposit')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doDeposit()">Confirm Deposit</button>
+  </div>
+</div></div>
+
 <!-- Reconciliation Setup -->
 <div class="overlay" id="sh-recon-setup" onclick="oc(event,this)">
 <div class="sheet"><div class="sheet-handle"></div>
@@ -730,7 +746,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
         </div>
       </div>
       <div class="fgrp" style="margin-bottom:10px"><label>Description</label><input id="be-desc" placeholder="e.g. Salary deposit"></div>
-      <div class="fgrp" style="margin-bottom:10px"><label>Amount (Rs.)</label><input type="number" id="be-amt" placeholder="0.00"></div>
+      <div class="fgrp" style="margin-bottom:10px"><label>Amount (Rs.)</label><input type="text" inputmode="decimal" id="be-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
       <button class="btn btn-primary btn-sm btn-full" onclick="saveBankEntry()">Add This Entry</button>
     </div>
   </div>
@@ -753,7 +769,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn btn-ghost btn-full" onclick="toggleTheme()">🎨 &nbsp;Switch Theme (Dark / Light)</button>
       <button class="btn btn-ghost btn-full" id="set-pin-btn" onclick="openSetPin()">🔐 &nbsp;Set PIN Locks</button>
-      <button class="btn btn-ghost btn-full" id="export-btn" onclick="doExport()">📊 &nbsp;Export to CSV</button>
+      <button class="btn btn-ghost btn-full" id="staff-btn" onclick="openSheet('sh-staff-emails')">👥 &nbsp;Manage Staff Emails</button>
+      <button class="btn btn-ghost btn-full" id="report-btn" onclick="openSheet('sh-reports')">📊 &nbsp;Generate Report</button>
+      <button class="btn btn-ghost btn-full" id="export-btn" onclick="doExport()">📤 &nbsp;Export to CSV</button>
       <button class="btn btn-danger btn-full" style="margin-top:8px" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -782,6 +800,57 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div></div>
 
+<!-- Staff Emails Sheet -->
+<div class="overlay" id="sh-staff-emails" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Staff Emails</div><button class="sheet-close" onclick="closeSheet('sh-staff-emails')">✕</button></div>
+  <div class="sheet-body">
+    <div class="alert alert-blue"><div class="alert-icon">👥</div><div><div class="alert-title">Staff Role</div><div class="alert-desc">Staff can create and read all data but cannot edit or delete. Add their Gmail addresses below.</div></div></div>
+    <div class="fgrp"><label>Staff Gmail Addresses</label>
+      <textarea id="staff-emails-input" rows="5" style="resize:none;border-radius:12px;background:var(--surface2);border:1.5px solid var(--border);padding:12px;width:100%;font-size:14px;color:var(--t1)" placeholder="one@gmail.com&#10;two@gmail.com&#10;(one per line)"></textarea>
+    </div>
+    <p style="font-size:12px;color:var(--t3)">Each person logs in with their own Google / Email account. Staff role is determined by their email address.</p>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-staff-emails')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doSaveStaffEmails()">Save</button>
+  </div>
+</div></div>
+
+<!-- Reports Sheet -->
+<div class="overlay" id="sh-reports" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Generate Report</div><button class="sheet-close" onclick="closeSheet('sh-reports')">✕</button></div>
+  <div class="sheet-body">
+    <div class="fgrp"><label>Account</label><select id="rpt-acct"><option value="all">All Accounts</option></select></div>
+    <div class="frow">
+      <div class="fgrp"><label>From Date</label><input type="date" id="rpt-from"></div>
+      <div class="fgrp"><label>To Date</label><input type="date" id="rpt-to"></div>
+    </div>
+    <div class="fgrp"><label>Report Format</label>
+      <select id="rpt-format">
+        <option value="screen">View on Screen</option>
+        <option value="csv">Download CSV</option>
+      </select>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-reports')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doGenerateReport()">Generate →</button>
+  </div>
+</div></div>
+
+<!-- Report Viewer Sheet -->
+<div class="overlay" id="sh-report-view" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title" id="rpt-view-title">Report</div><button class="sheet-close" onclick="closeSheet('sh-report-view')">✕</button></div>
+  <div class="sheet-body" id="rpt-view-body" style="padding:0"></div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-report-view')">Close</button>
+    <button class="btn btn-primary" style="flex:2" onclick="downloadReport()">📥 Download CSV</button>
+  </div>
+</div></div>
+
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -796,6 +865,16 @@ const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book
 // ── STATE ──
 let ACCTS=[],TXNS=[],CHEQS=[],ACTS=[];
 let VIEW_ONLY=false; // true when logged in with view-only PIN
+let IS_STAFF=false;  // true for staff Gmail - can create+read, no update/delete
+// Add staff Gmail addresses here (comma separated in localStorage or hardcoded)
+function getStaffEmails(){
+  const stored=localStorage.getItem('bb_staff_emails')||'';
+  return stored.split(',').map(e=>e.trim().toLowerCase()).filter(Boolean);
+}
+function checkRole(){
+  const email=(me?.email||'').toLowerCase();
+  IS_STAFF=getStaffEmails().includes(email);
+}
 let BANK_ENTRIES={}; // acctId -> [{date,type,desc,amount,matched,id}]
 let db=null,auth=null,me=null;
 let curPage='home',cheqTab='received',txnFilt='all',actFilt='all';
@@ -888,6 +967,7 @@ function startApp(){
   document.getElementById('app').style.display='block';
   document.getElementById('profile-email').textContent=me?.email||'';
   setGreeting();
+  checkRole();
   applyViewOnlyMode();
   subscribe();
   setInterval(autoClear,5*60*1000);
@@ -908,8 +988,24 @@ function applyViewOnlyMode(){
   }
 }
 function uid(){return me.uid;}
+
+// ── AMOUNT FORMATTING (comma every 3 digits) ──
+function fmtN(n){return Number(n||0).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtAmt(el){
+  let v=el.value.replace(/[^0-9.]/g,'');
+  const parts=v.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
+}
+function parseAmt(id){
+  return parseFloat((document.getElementById(id)?.value||'0').replace(/,/g,''))||0;
+}
 function guardVO(){
   if(VIEW_ONLY){toast('👁️ View Only — no changes allowed');return true;}
+  return false;
+}
+function guardStaffUpdate(){
+  if(IS_STAFF){toast('Staff accounts cannot edit or delete');return true;}
   return false;
 }
 function c(n){return db.collection('users').doc(uid()).collection(n);}
@@ -971,8 +1067,12 @@ function acctBal(id){
     else if(t.type==='transfer'){if(t.accountId===id)b-=t.amount;if(t.toAccountId===id)b+=t.amount;}
   });
   CHEQS.filter(q=>q.accountId===id).forEach(q=>{
+    // Received: add when deposited or cleared
     if(q.dir==='recv'&&(q.stage==='deposited'||q.stage==='cleared'))b+=q.amount;
-    if(q.dir==='issue'&&(q.stage==='issued'||q.stage==='cleared'))b-=q.amount;
+    // Issued: only reduce balance when cleared (i.e. cheque arrived at bank & cleared)
+    // The cheque 'date' field = date cheque arrives at bank / due date
+    if(q.dir==='issue'&&q.stage==='cleared')b-=q.amount;
+    // Returned received cheque: reverse the deposit
     if(q.dir==='recv'&&q.stage==='returned'&&!q.collectedBack)b-=q.amount;
   });
   return b;
@@ -984,7 +1084,7 @@ function txnTypeChange(){
 }
 function doSaveTxn(){
   if(guardVO())return;
-  const eid=g('txn-edit-id'),acct=g('txn-acct'),type=g('txn-type'),amt=parseFloat(g('txn-amt'))||0,
+  const eid=g('txn-edit-id'),acct=g('txn-acct'),type=g('txn-type'),amt=parseAmt('txn-amt'),
     date=g('txn-date'),desc=g('txn-desc').trim(),ref=g('txn-ref').trim(),toAcct=g('txn-to-acct');
   if(!acct||!amt||!date){toast('Fill account, amount and date');return;}
   const data={accountId:acct,type,amount:amt,date,desc,ref,toAccountId:type==='transfer'?toAcct:'',updatedAt:fts()};
@@ -999,13 +1099,14 @@ function editTxn(id){
   const t=TXNS.find(x=>x.id===id);if(!t)return;
   fillAcctSelects();
   sv('txn-edit-id',id);sv('txn-sh-title','Edit Transaction');
-  sv('txn-acct',t.accountId);sv('txn-type',t.type);sv('txn-amt',t.amount);
+  sv('txn-acct',t.accountId);sv('txn-type',t.type);sv('txn-amt',fmtN(t.amount));
   sv('txn-date',t.date);sv('txn-desc',t.desc||'');sv('txn-ref',t.ref||'');
   txnTypeChange();if(t.toAccountId)sv('txn-to-acct',t.toAccountId);
   openSheet('sh-add-txn');
 }
 function delTxn(id){
   if(guardVO())return;
+  if(guardStaffUpdate())return;
   if(!confirm('Delete this transaction?'))return;
   const t=TXNS.find(x=>x.id===id);
   c('transactions').doc(id).delete().then(()=>{log('txn',`Transaction deleted: ${t?.desc||t?.type}`,'#f43f5e');toast('Deleted');});
@@ -1016,17 +1117,17 @@ function openAddCheque(dir){
   if(guardVO())return;
   sv('cheq-edit-id','');sv('cheq-dir',dir);
   document.getElementById('cheq-sh-title').textContent=dir==='recv'?'Receive Cheque':'Issue Cheque';
-  fillAcctSelects();sv('cheq-date',today());
-  ['cheq-party','cheq-no','cheq-bank','cheq-notes'].forEach(id=>sv(id,''));sv('cheq-amt','');
+  sv('cheq-date',today());
+  ['cheq-party','cheq-no','cheq-bank','cheq-notes','cheq-amt'].forEach(id=>sv(id,''));
   openSheet('sh-add-cheq');
 }
 function doSaveCheq(){
   if(guardVO())return;
   const eid=g('cheq-edit-id'),dir=g('cheq-dir'),party=g('cheq-party').trim(),no=g('cheq-no').trim(),
-    amt=parseFloat(g('cheq-amt'))||0,date=g('cheq-date'),bank=g('cheq-bank').trim(),
-    acct=g('cheq-acct'),notes=g('cheq-notes').trim();
+    amt=parseAmt('cheq-amt'),date=g('cheq-date'),bank=g('cheq-bank').trim(),notes=g('cheq-notes').trim();
   if(!party||!no||!amt||!date){toast('Fill party name, cheque no., amount and date');return;}
-  const data={dir,party,no,bank,amount:amt,date,accountId:acct,notes,updatedAt:fts()};
+  // No account stored at entry — account assigned at deposit time
+  const data={dir,party,no,bank,amount:amt,date,accountId:'',notes,updatedAt:fts()};
   if(eid){
     c('cheques').doc(eid).update(data).then(()=>{log('cheque',`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,'#f59e0b');closeSheet('sh-add-cheq');toast('Updated ✓');});
   } else {
@@ -1036,8 +1137,34 @@ function doSaveCheq(){
     });
   }
 }
+// Open deposit sheet
+function openDeposit(id){
+  closeSheet('sh-cheq-detail');
+  const q=CHEQS.find(x=>x.id===id);if(!q)return;
+  sv('dep-cheq-id',id);sv('dep-date',today());sv('dep-notes','');
+  document.getElementById('dep-cheq-info').innerHTML=`
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">Cheque #${es(q.no)} — ${es(q.party)}</div>
+    <div style="font-size:20px;font-weight:800;color:var(--green)">Rs. ${fm(q.amount)}</div>
+    <div style="font-size:12px;color:var(--t3);margin-top:2px">${q.date} · ${es(q.bank||'')}</div>`;
+  fillAcctSelects();
+  openSheet('sh-deposit');
+}
+function doDeposit(){
+  if(guardVO())return;
+  const id=g('dep-cheq-id'),acct=g('dep-acct'),date=g('dep-date'),notes=g('dep-notes').trim();
+  if(!acct){toast('Select an account');return;}
+  const q=CHEQS.find(x=>x.id===id);
+  c('cheques').doc(id).update({
+    stage:'deposited',accountId:acct,depositedAt:new Date().toISOString(),
+    depositDate:date,depositNotes:notes,updatedAt:fts()
+  }).then(()=>{
+    log('cheque',`Cheque #${q?.no} deposited to ${ACCTS.find(a=>a.id===acct)?.name}`,'#4f80ff');
+    closeSheet('sh-deposit');toast('Cheque deposited ✓');
+  });
+}
 function setStage(id,stage,extra={}){
   if(guardVO())return;
+  if(IS_STAFF&&['cleared','returned'].includes(stage)){toast('Staff cannot change cheque status');return;}
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({stage,...extra,updatedAt:fts()}).then(()=>{
     log('cheque',`Cheque #${q?.no} → ${stage}`,'#a78bfa');
@@ -1092,7 +1219,7 @@ function openCheqDetail(id){
   let btns='';
   if(q.dir==='recv'){
     if(q.stage==='received'){
-      btns+=`<button class="btn btn-primary btn-sm" onclick="setStage('${id}','deposited',{depositedAt:'${new Date().toISOString()}'})">📥 Mark Deposited</button>`;
+      btns+=`<button class="btn btn-primary btn-sm" onclick="openDeposit('${id}')">📥 Deposit to Account</button>`;
       btns+=`<button class="btn btn-ghost btn-sm" onclick="openTransfer('${id}')">📤 Transfer to Someone</button>`;
     }
     if(q.stage==='deposited'){
@@ -1118,13 +1245,14 @@ function editCheq(id){
   const q=CHEQS.find(x=>x.id===id);if(!q)return;
   sv('cheq-edit-id',id);sv('cheq-dir',q.dir);
   document.getElementById('cheq-sh-title').textContent='Edit Cheque';
-  sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',q.amount);
+  sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',fmtN(q.amount));
   sv('cheq-date',q.date);sv('cheq-bank',q.bank||'');sv('cheq-notes',q.notes||'');
-  fillAcctSelects();setTimeout(()=>sv('cheq-acct',q.accountId),60);
+  // Account no longer stored at entry level
   openSheet('sh-add-cheq');
 }
 function delCheq(id){
   if(guardVO())return;
+  if(guardStaffUpdate())return;
   if(!confirm('Delete this cheque?'))return;
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).delete().then(()=>{log('cheque',`Cheque #${q?.no} deleted`,'#f43f5e');closeSheet('sh-cheq-detail');toast('Deleted');});
@@ -1179,7 +1307,7 @@ function autoClear(){
 // ── RECONCILIATION ──
 function addBankEntry(){document.getElementById('be-form').style.display='block';sv('be-date',today());sv('be-desc','');sv('be-amt','');}
 function saveBankEntry(){
-  const date=g('be-date'),type=g('be-type'),desc=g('be-desc').trim(),amt=parseFloat(g('be-amt'))||0;
+  const date=g('be-date'),type=g('be-type'),desc=g('be-desc').trim(),amt=parseAmt('be-amt');
   if(!amt||!date){toast('Fill date and amount');return;}
   tempBE.push({id:'be'+Date.now(),date,type,desc,amount:amt,matched:false});
   renderBE();document.getElementById('be-form').style.display='none';
@@ -1516,13 +1644,27 @@ function openSheet(id){
       badge.innerHTML='<span class="badge badge-amber" style="font-size:12px;padding:5px 12px">👁️ View Only Mode</span>';
       icon.textContent='👁️';
       document.getElementById('set-pin-btn').style.display='none';
+      document.getElementById('staff-btn').style.display='none';
+      document.getElementById('report-btn').style.display='none';
       document.getElementById('export-btn').style.display='none';
     } else {
-      badge.innerHTML='<span class="badge badge-green" style="font-size:12px;padding:5px 12px">🔑 Admin Mode</span>';
+      if(IS_STAFF){
+        badge.innerHTML='<span class="badge badge-blue" style="font-size:12px;padding:5px 12px">👥 Staff Mode</span>';
+        icon.textContent='👥';
+      } else {
+        badge.innerHTML='<span class="badge badge-green" style="font-size:12px;padding:5px 12px">🔑 Admin Mode</span>';
+      }
       icon.textContent='👤';
       document.getElementById('set-pin-btn').style.display='';
+      document.getElementById('staff-btn').style.display='';
+      document.getElementById('report-btn').style.display='';
       document.getElementById('export-btn').style.display='';
     }
+  }
+  if(id==='sh-reports'){openSheet_reports();return;}
+  if(id==='sh-staff-emails'){
+    const stored=localStorage.getItem('bb_staff_emails')||'';
+    document.getElementById('staff-emails-input').value=stored.split(',').filter(Boolean).join('\n');
   }
   if(id==='sh-add-txn'){fillAcctSelects();sv('txn-edit-id','');sv('txn-sh-title','Add Transaction');sv('txn-date',today());txnTypeChange();}
   if(id==='sh-recon-setup'){fillAcctSelects();sv('rs-date',today());renderBE();}
@@ -1574,6 +1716,137 @@ function toast(msg){
   document.body.appendChild(t);
   requestAnimationFrame(()=>{t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';});
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2200);
+}
+
+// ── STAFF EMAILS ──
+function doSaveStaffEmails(){
+  const raw=document.getElementById('staff-emails-input').value;
+  const emails=raw.split('\n').map(e=>e.trim().toLowerCase()).filter(Boolean).join(',');
+  localStorage.setItem('bb_staff_emails',emails);
+  closeSheet('sh-staff-emails');toast('Staff emails saved ✓');
+  checkRole();applyViewOnlyMode();
+}
+
+// ── REPORTS (Change 4) ──
+let _rptData=[];
+function openSheet_reports(){
+  // populate account select
+  const sel=document.getElementById('rpt-acct');
+  const cur=sel.value;
+  sel.innerHTML='<option value="all">All Accounts</option>'+ACCTS.map(a=>`<option value="${a.id}">${es(a.name)} — ${es(a.bank||'')}</option>`).join('');
+  if(cur)sel.value=cur;
+  // default date range: first of month to today
+  const now=new Date();
+  const firstDay=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  if(!document.getElementById('rpt-from').value)document.getElementById('rpt-from').value=firstDay;
+  if(!document.getElementById('rpt-to').value)document.getElementById('rpt-to').value=today();
+  openSheet('sh-reports');
+}
+function doGenerateReport(){
+  const acctId=g('rpt-acct'),from=g('rpt-from'),to=g('rpt-to'),fmt=g('rpt-format');
+  if(!from||!to){toast('Select date range');return;}
+  if(from>to){toast('From date must be before To date');return;}
+
+  // Build ledger per account
+  const targetAccts=acctId==='all'?ACCTS:ACCTS.filter(a=>a.id===acctId);
+  _rptData=[];
+
+  targetAccts.forEach(acct=>{
+    let rows=[];
+    // Transactions
+    TXNS.filter(t=>t.accountId===acct.id&&t.date>=from&&t.date<=to).forEach(t=>{
+      const isCr=t.type==='deposit'||t.type==='interest';
+      const isTransferIn=t.type==='transfer'&&t.toAccountId===acct.id;
+      const isTransferOut=t.type==='transfer'&&t.accountId===acct.id;
+      rows.push({
+        date:t.date,
+        desc:t.desc||(t.type==='deposit'?'Deposit':t.type==='withdrawal'?'Withdrawal':t.type==='transfer'?'Transfer':t.type==='bank_charge'?'Bank Charge':'Interest'),
+        cr:(isCr||isTransferIn)?t.amount:0,
+        dr:(!isCr&&!isTransferIn||isTransferOut)?t.amount:0,
+        source:'txn'
+      });
+    });
+    // Cheques affecting this account
+    CHEQS.filter(q=>q.accountId===acct.id&&q.date>=from&&q.date<=to).forEach(q=>{
+      if(q.dir==='recv'&&(q.stage==='deposited'||q.stage==='cleared'))
+        rows.push({date:q.depositDate||q.date,desc:`Cheque Deposit #${q.no} ${q.party}`,cr:q.amount,dr:0,source:'cheque'});
+      if(q.dir==='issue'&&q.stage==='cleared')
+        rows.push({date:q.date,desc:`Cheque Issued #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
+      if(q.dir==='recv'&&q.stage==='returned'&&!q.collectedBack)
+        rows.push({date:q.date,desc:`Cheque Returned #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
+    });
+    rows.sort((a,b)=>a.date.localeCompare(b.date));
+    // Running balance - start from opening balance adjusted for pre-range txns
+    let openBal=acct.openingBalance||0;
+    TXNS.filter(t=>t.accountId===acct.id&&t.date<from).forEach(t=>{
+      if(t.type==='deposit'||t.type==='interest')openBal+=t.amount;
+      else if(t.type==='withdrawal'||t.type==='bank_charge')openBal-=t.amount;
+      else if(t.type==='transfer'){if(t.accountId===acct.id)openBal-=t.amount;if(t.toAccountId===acct.id)openBal+=t.amount;}
+    });
+    let bal=openBal;
+    const ledgerRows=rows.map(r=>{bal+=r.cr-r.dr;return{...r,bal};});
+    _rptData.push({acct,openBal,rows:ledgerRows,from,to});
+  });
+
+  if(fmt==='csv'){closeSheet('sh-reports');downloadReport();return;}
+  renderReportScreen();
+  closeSheet('sh-reports');
+  openSheet('sh-report-view');
+}
+function renderReportScreen(){
+  const el=document.getElementById('rpt-view-body');
+  const from=g('rpt-from'),to=g('rpt-to');
+  document.getElementById('rpt-view-title').textContent=`Report ${from} → ${to}`;
+  if(!_rptData.length){el.innerHTML='<div class="empty"><div class="empty-text">No data</div></div>';return;}
+  el.innerHTML=_rptData.map(d=>`
+    <div style="padding:14px 16px;background:var(--surface2);border-bottom:2px solid var(--blue)">
+      <div style="font-size:15px;font-weight:800">${es(d.acct.name)}</div>
+      <div style="font-size:11px;color:var(--t3)">${es(d.acct.bank||'')} · Opening Balance: Rs. ${fm(d.openBal)}</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:420px">
+        <thead>
+          <tr style="background:var(--surface3)">
+            <th style="padding:8px 10px;text-align:left;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Date</th>
+            <th style="padding:8px 10px;text-align:left;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Description</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">DR</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">CR</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${d.rows.length?d.rows.map((r,i)=>`
+            <tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--surface)':'background:var(--surface2)'}">
+              <td style="padding:9px 10px;white-space:nowrap;color:var(--t2)">${r.date}</td>
+              <td style="padding:9px 10px;color:var(--t1)">${es(r.desc)}</td>
+              <td style="padding:9px 10px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${r.dr>0?fm(r.dr):''}</td>
+              <td style="padding:9px 10px;text-align:right;color:var(--green);font-variant-numeric:tabular-nums">${r.cr>0?fm(r.cr):''}</td>
+              <td style="padding:9px 10px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:${r.bal<0?'var(--red)':'var(--t1)'}">${fm(r.bal)}</td>
+            </tr>`).join('')
+          :'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3)">No transactions in this period</td></tr>'}
+          <tr style="background:var(--surface3);font-weight:800">
+            <td colspan="2" style="padding:10px;font-size:12px">CLOSING BALANCE</td>
+            <td style="padding:10px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${fm(d.rows.reduce((s,r)=>s+r.dr,0))}</td>
+            <td style="padding:10px;text-align:right;color:var(--green);font-variant-numeric:tabular-nums">${fm(d.rows.reduce((s,r)=>s+r.cr,0))}</td>
+            <td style="padding:10px;text-align:right;font-variant-numeric:tabular-nums;color:${(d.rows[d.rows.length-1]?.bal||d.openBal)<0?'var(--red)':'var(--blue)'}">${fm(d.rows[d.rows.length-1]?.bal||d.openBal)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="height:20px"></div>`).join('');
+}
+function downloadReport(){
+  const from=g('rpt-from')||_rptData[0]?.from||'',to=g('rpt-to')||_rptData[0]?.to||'';
+  let csv='Account,Date,Description,DR,CR,Balance\n';
+  _rptData.forEach(d=>{
+    if(!d.rows.length){csv+=`"${d.acct.name}","${from} to ${to}","No transactions",,,"${fm(d.openBal)}"\n`;return;}
+    d.rows.forEach(r=>{
+      csv+=`"${d.acct.name}","${r.date}","${r.desc.replace(/"/g,"''")}","${r.dr>0?fm(r.dr):''}","${r.cr>0?fm(r.cr):''}","${fm(r.bal)}"\n`;
+    });
+  });
+  const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=`bankbook-report-${from}-to-${to}.csv`;a.click();
+  toast('Report downloaded ✓');
 }
 
 // ── INIT ──
