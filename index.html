@@ -1479,10 +1479,15 @@ function renderHome(){
   const inC=CHEQS.filter(q=>q.stage==='deposited');
   const iss=CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued');
   const ret=CHEQS.filter(q=>q.stage==='returned'&&!q.collectedBack);
-  sv('stat-todeposit',toD.length);sv('stat-todeposit-amt','Rs. '+fm(toD.reduce((s,q)=>s+q.amount,0)));
-  sv('stat-clearing',inC.length);sv('stat-clearing-amt','Rs. '+fm(inC.reduce((s,q)=>s+q.amount,0)));
-  sv('stat-issued',iss.length);sv('stat-issued-amt','Rs. '+fm(iss.reduce((s,q)=>s+q.amount,0)));
-  sv('stat-returned',ret.length);sv('stat-returned-amt','Rs. '+fm(ret.reduce((s,q)=>s+q.amount,0)));
+  function setstat(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+  setstat('stat-todeposit',toD.length);
+  setstat('stat-todeposit-amt','Rs. '+fm(toD.reduce((s,q)=>s+q.amount,0)));
+  setstat('stat-clearing',inC.length);
+  setstat('stat-clearing-amt','Rs. '+fm(inC.reduce((s,q)=>s+q.amount,0)));
+  setstat('stat-issued',iss.length);
+  setstat('stat-issued-amt','Rs. '+fm(iss.reduce((s,q)=>s+q.amount,0)));
+  setstat('stat-returned',ret.length);
+  setstat('stat-returned-amt','Rs. '+fm(ret.reduce((s,q)=>s+q.amount,0)));
 }
 
 let _cheqTab='received';
