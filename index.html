@@ -1912,7 +1912,7 @@ if('serviceWorker' in navigator){
 // In-app version poll: fetches the live app.html (bypassing every cache),
 // reads its APP_VERSION, and prompts to update if newer. Belt & braces.
 function checkAppVersion(){
-  fetch('app.html?vchk='+Date.now(),{cache:'no-store'})
+  fetch('index.html?vchk='+Date.now(),{cache:'no-store'})
     .then(r=>r.text())
     .then(html=>{
       const m=html.match(/APP_VERSION='([\d.]+)'/);
