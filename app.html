@@ -29,137 +29,223 @@
   --blue-dim:rgba(45,95,232,.10);--green-dim:rgba(22,163,74,.10);--red-dim:rgba(220,38,38,.10);--amber-dim:rgba(217,119,6,.10);--violet-dim:rgba(124,58,237,.10);
   --shadow:0 4px 20px rgba(0,0,0,.08);
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);font-size:15px;-webkit-font-smoothing:antialiased}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;transition:opacity .15s}
-button:active{opacity:.7}
-input,select,textarea{font-family:inherit;font-size:15px;color:var(--t1);background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
-input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim)}
+/* ── RESET & BASE ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html{height:100%;height:-webkit-fill-available}
+body,.card,.topbar,.bottom-nav,.sheet,input,select,.stat-box,.acct-card,.qa-btn,.chip{transition:background-color .3s ease,border-color .3s ease,color .2s ease}
+body{
+  min-height:100vh;min-height:-webkit-fill-available;
+  overflow:hidden;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--t1);
+  font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+  user-select:none;-webkit-user-select:none;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+button{transition:transform .12s ease,opacity .12s ease}
+button:active{opacity:.75;transform:scale(.96)}
+input,select,textarea{
+  font-family:inherit;font-size:16px;/* 16px prevents iOS zoom */
+  color:var(--t1);background:var(--surface2);
+  border:1.5px solid var(--border);border-radius:12px;
+  padding:13px 14px;width:100%;outline:none;
+  transition:border-color .2s;-webkit-appearance:none;appearance:none;
+  user-select:text;-webkit-user-select:text;
+}
+input:focus,select:focus{border-color:var(--blue)}
 select option{background:var(--surface)}
 ::placeholder{color:var(--t3)}
+a{color:var(--blue);text-decoration:none}
 
-/* ── LAYOUT ── */
-.shell{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.pages{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:72px;scroll-behavior:smooth}
-.page{display:none;animation:fadeIn .2s ease}
-.page.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* ── SHELL ── */
+.shell{
+  display:flex;flex-direction:column;
+  height:100vh;height:100dvh;/* dynamic viewport height - fixes Android chrome bar */
+  overflow:hidden;position:relative;
+}
+.pages{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom));
+  overscroll-behavior:contain;
+}
+.page{display:none}
+.page.active{display:block;animation:fadeUp .28s cubic-bezier(.22,1,.36,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── TOPBAR ── */
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:58px;display:flex;align-items:center;gap:10px;flex-shrink:0;position:sticky;top:0;z-index:50}
-.logo{font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--t1)}
+.topbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 14px;
+  padding-top:env(safe-area-inset-top);
+  height:calc(54px + env(safe-area-inset-top));
+  display:flex;align-items:center;gap:8px;
+  flex-shrink:0;z-index:50;
+}
+.logo{font-size:19px;font-weight:800;letter-spacing:-.5px;color:var(--t1)}
 .logo span{color:var(--blue)}
 .spacer{flex:1}
-.icon-btn{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--surface2);border:1px solid var(--border);position:relative;flex-shrink:0}
-.icon-btn:hover{background:var(--surface3)}
-.notif-dot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--surface);display:none}
+.icon-btn{
+  width:38px;height:38px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:var(--surface2);
+  border:1px solid var(--border);position:relative;flex-shrink:0;
+}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--surface);display:none}
 .notif-dot.on{display:block}
-.sync-pill{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px}
-.sync-pip{width:6px;height:6px;border-radius:50%;background:var(--t3)}
+.sync-pill{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t3);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 8px;white-space:nowrap}
+.sync-pip{width:5px;height:5px;border-radius:50%;background:var(--t3);flex-shrink:0}
 .sync-pip.live{background:var(--green)}
 .sync-pip.err{background:var(--red)}
 
 /* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
-.nav-item{flex:1;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.01em}
-.nav-item .ni{font-size:22px;line-height:1;transition:transform .2s}
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;
+  padding-bottom:env(safe-area-inset-bottom);
+  z-index:50;
+  box-shadow:0 -4px 20px rgba(0,0,0,.15);
+}
+.nav-item{
+  flex:1;padding:8px 2px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:9px;font-weight:700;color:var(--t3);
+  letter-spacing:.02em;text-transform:uppercase;
+  min-width:0;
+}
+.nav-item .ni{font-size:20px;line-height:1.2;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
 .nav-item.on{color:var(--blue)}
-.nav-item.on .ni{transform:scale(1.1)}
+.nav-item.on .ni{transform:translateY(-2px) scale(1.12)}
+.nav-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
 /* ── PAGE HEADER ── */
-.ph{padding:20px 16px 12px;display:flex;align-items:center;justify-content:space-between}
-.ph-title{font-size:22px;font-weight:800;letter-spacing:-.3px}
-.ph-sub{font-size:13px;color:var(--t3);margin-top:2px}
+.ph{padding:16px 14px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ph-title{font-size:20px;font-weight:800;letter-spacing:-.3px;line-height:1.2}
+.ph-sub{font-size:12px;color:var(--t3);margin-top:1px}
 
 /* ── CARDS ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
 .card+.card{margin-top:10px}
-.card-pad{padding:16px}
-.section{padding:0 16px;margin-bottom:20px}
-.sec-label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--t3);text-transform:uppercase;margin-bottom:10px}
+.section{padding:0 14px;margin-bottom:16px}
+.sec-label{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--t3);text-transform:uppercase;margin-bottom:8px}
 
 /* ── ACCOUNT CARD ── */
-.acct-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:10px;position:relative;overflow:hidden;cursor:pointer}
-.acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--blue)}
-.acct-name{font-size:16px;font-weight:700;margin-bottom:2px}
-.acct-bank{font-size:12px;color:var(--t3);margin-bottom:14px}
-.acct-bal{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.acct-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:16px;margin-bottom:10px;
+  position:relative;overflow:hidden;
+  cursor:pointer;
+}
+.acct-card:active{transform:scale(.985)}
+.acct-card{transition:transform .15s ease}
+.acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--violet))}
+.acct-name{font-size:15px;font-weight:700;margin-bottom:1px}
+.acct-bank{font-size:11px;color:var(--t3);margin-bottom:12px}
+.acct-bal{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px;line-height:1}
 .acct-bal.neg{color:var(--red)}
-.acct-footer{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.acct-footer{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 
 /* ── STAT GRID ── */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;padding:0 16px}
-.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
-.stat-label{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
-.stat-val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
-.stat-sub{font-size:12px;color:var(--t3);margin-top:3px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;padding:0 14px}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px}
+.stat-label{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
+.stat-val{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── QUICK ACTIONS ── */
-.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
-.qa-btn{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;cursor:pointer}
-.qa-btn:hover{border-color:var(--blue);background:var(--blue-dim)}
-.qa-icon{font-size:24px;line-height:1}
-.qa-label{font-size:13px;font-weight:600;color:var(--t1)}
-.qa-desc{font-size:11px;color:var(--t3)}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px}
+.qa-btn{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:12px;padding:14px 12px;
+  display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+  text-align:left;cursor:pointer;width:100%;
+}
+.qa-btn:active{background:var(--blue-dim);border-color:var(--blue)}
+.qa-icon{font-size:22px;line-height:1}
+.qa-label{font-size:13px;font-weight:700;color:var(--t1);line-height:1.2}
+.qa-desc{font-size:10px;color:var(--t3);line-height:1.3}
 
 /* ── CHEQUE ROW ── */
-.cq-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.cq-row{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer}
 .cq-row:last-child{border-bottom:none}
-.cq-row:hover{background:var(--surface2)}
-.cq-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.cq-row{transition:background .15s ease}
+.cq-row:active{background:var(--surface2);transform:scale(.995)}
+.cq-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
 .cq-body{flex:1;min-width:0}
-.cq-party{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cq-meta{font-size:12px;color:var(--t3);margin-top:2px}
-.cq-right{text-align:right;flex-shrink:0}
-.cq-amt{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.cq-party{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cq-meta{font-size:11px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cq-right{text-align:right;flex-shrink:0;max-width:100px}
+.cq-amt{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
 .cq-amt.in{color:var(--green)}
 .cq-amt.out{color:var(--red)}
-.cq-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
 
 /* ── TXN ROW ── */
-.txn-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.txn-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
 .txn-row:last-child{border-bottom:none}
-.txn-row:hover{background:var(--surface2)}
-.txn-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.txn-row{transition:background .15s ease}
+.txn-row:active{background:var(--surface2)}
+.txn-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .txn-body{flex:1;min-width:0}
 .txn-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.txn-sub{font-size:12px;color:var(--t3);margin-top:2px}
+.txn-sub{font-size:11px;color:var(--t3);margin-top:1px}
 .txn-amt{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .txn-amt.cr{color:var(--green)}
 .txn-amt.dr{color:var(--red)}
 
 /* ── CHIP TABS ── */
-.chips{display:flex;gap:8px;overflow-x:auto;padding:0 16px 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips{
+  display:flex;gap:6px;overflow-x:auto;
+  padding:0 14px 12px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
 .chips::-webkit-scrollbar{display:none}
-.chip{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;background:var(--surface);border:1.5px solid var(--border);color:var(--t3);white-space:nowrap;flex-shrink:0}
+.chip{
+  padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  background:var(--surface);border:1.5px solid var(--border);
+  color:var(--t3);white-space:nowrap;flex-shrink:0;
+}
+.chip{transition:background .2s ease,color .2s ease,border-color .2s ease,transform .12s ease}
 .chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip:active{transform:scale(.94)}
 
 /* ── TOTAL BAR ── */
-.total-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--blue-dim);border-top:1px solid var(--blue);border-bottom:1px solid var(--blue);margin-bottom:0}
-.total-bar-label{font-size:12px;font-weight:600;color:var(--blue)}
-.total-bar-val{font-size:14px;font-weight:800;color:var(--blue);font-variant-numeric:tabular-nums}
+.total-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+  background:var(--blue-dim);
+  border-bottom:1px solid rgba(79,128,255,.25);
+}
+.total-bar span:first-child{font-size:12px;font-weight:600;color:var(--blue)}
+.total-bar span:last-child{font-size:13px;font-weight:800;color:var(--blue);font-variant-numeric:tabular-nums}
 
 /* ── EMPTY STATE ── */
-.empty{text-align:center;padding:48px 20px}
-.empty-icon{font-size:44px;margin-bottom:12px}
-.empty-text{font-size:15px;font-weight:600;color:var(--t2);margin-bottom:4px}
-.empty-sub{font-size:13px;color:var(--t3)}
+.empty{text-align:center;padding:44px 20px}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty-text{font-size:14px;font-weight:700;color:var(--t2);margin-bottom:3px}
+.empty-sub{font-size:12px;color:var(--t3)}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:filter .15s,opacity .15s}
-.btn:active{opacity:.8}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:13px 18px;border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;border:none;line-height:1;white-space:nowrap;
+}
+.btn:active{opacity:.7;transform:scale(.97)}
 .btn-primary{background:var(--blue);color:#fff}
-.btn-primary:hover{filter:brightness(1.1)}
 .btn-ghost{background:var(--surface2);color:var(--t1);border:1.5px solid var(--border)}
-.btn-ghost:hover{background:var(--surface3)}
 .btn-danger{background:var(--red);color:#fff}
 .btn-success{background:var(--green);color:#fff}
-.btn-sm{padding:8px 14px;font-size:13px;border-radius:10px}
-.btn-xs{padding:5px 10px;font-size:11px;border-radius:8px;font-weight:700}
+.btn-sm{padding:9px 14px;font-size:13px;border-radius:10px}
+.btn-xs{padding:6px 10px;font-size:11px;border-radius:8px;font-weight:700}
 .btn-full{width:100%}
 
 /* ── BADGES ── */
-.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;display:inline-block}
+.badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;display:inline-block;line-height:1.4}
 .badge-blue{background:var(--blue-dim);color:var(--blue)}
 .badge-green{background:var(--green-dim);color:var(--green)}
 .badge-red{background:var(--red-dim);color:var(--red)}
@@ -168,94 +254,126 @@ select option{background:var(--surface)}
 .badge-gray{background:var(--surface3);color:var(--t3)}
 
 /* ── FORMS ── */
-.fgrp{margin-bottom:16px}
-.fgrp label{display:block;font-size:12px;font-weight:700;color:var(--t3);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}
-.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.hint{font-size:12px;color:var(--t3);margin-top:5px}
+.fgrp{margin-bottom:14px}
+.fgrp label{display:block;font-size:11px;font-weight:700;color:var(--t3);margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* ── OVERLAY / SHEET ── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(2px)}
-.overlay.open{display:flex}
-.sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-height:90vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.67,0)}
-.overlay.open .sheet{transform:translateY(0);transition:transform .35s cubic-bezier(.33,1,.68,1)}
-.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 0}
-.sheet-hdr{padding:14px 20px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
-.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.2px}
-.sheet-close{width:32px;height:32px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--t3)}
-.sheet-body{overflow-y:auto;padding:20px;flex:1}
-.sheet-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:200;display:none;align-items:flex-end;
+  opacity:0;transition:opacity .25s ease;
+}
+.overlay.open{display:flex;animation:ovIn .25s ease both}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.sheet{
+  background:var(--surface);border-radius:20px 20px 0 0;
+  width:100%;max-height:92vh;max-height:92dvh;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .25s cubic-bezier(.55,0,.85,.36);
+  will-change:transform;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.overlay.open .sheet{transform:translateY(0);transition:transform .42s cubic-bezier(.16,1,.3,1)}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:10px auto 0}
+.sheet-hdr{
+  padding:12px 18px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sheet-title{font-size:17px;font-weight:800;letter-spacing:-.2px}
+.sheet-close{
+  width:30px;height:30px;border-radius:9px;
+  background:var(--surface2);display:flex;align-items:center;
+  justify-content:center;font-size:15px;color:var(--t3);
+}
+.sheet-body{overflow-y:auto;padding:18px;flex:1;-webkit-overflow-scrolling:touch}
+.sheet-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0}
 
-/* ── DETAIL FIELD ── */
-.detail-grid{display:flex;flex-direction:column;gap:0}
-.detail-row{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}
+/* ── DETAIL ── */
+.detail-row{display:flex;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border)}
 .detail-row:last-child{border-bottom:none}
-.detail-key{font-size:12px;font-weight:600;color:var(--t3);width:100px;flex-shrink:0;text-transform:uppercase;letter-spacing:.03em}
+.detail-key{font-size:11px;font-weight:700;color:var(--t3);width:90px;flex-shrink:0;text-transform:uppercase;letter-spacing:.03em;padding-top:1px}
 .detail-val{font-size:14px;font-weight:500;flex:1}
 
 /* ── NOTIF DRAWER ── */
-.notif-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:none;backdrop-filter:blur(2px)}
+.notif-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);display:none}
 .notif-overlay.open{display:block}
-.notif-drawer{position:absolute;top:0;right:0;bottom:0;width:min(340px,92vw);background:var(--surface);overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.33,1,.68,1)}
-.notif-overlay.open .notif-drawer{transform:translateX(0)}
-.notif-hdr{padding:20px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.notif-item{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+.notif-drawer{
+  position:absolute;top:0;right:0;bottom:0;
+  width:min(320px,88vw);background:var(--surface);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.33,1,.68,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.notif-overlay.open .notif-drawer{transform:translateX(0);transition:transform .38s cubic-bezier(.16,1,.3,1)}
+.notif-hdr{padding:18px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-item{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
 .notif-item:last-child{border-bottom:none}
-.notif-item-icon{font-size:22px;flex-shrink:0;margin-top:1px}
-.notif-item-body{}
-.notif-item-title{font-size:14px;font-weight:600;margin-bottom:2px}
-.notif-item-desc{font-size:12px;color:var(--t2);line-height:1.5}
-.notif-total{font-size:13px;font-weight:700;color:var(--blue);margin-top:4px}
+.notif-item-icon{font-size:20px;flex-shrink:0}
+.notif-item-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.notif-item-desc{font-size:12px;color:var(--t2);line-height:1.4}
+.notif-total{font-size:12px;font-weight:700;color:var(--blue);margin-top:3px}
 
-/* ── ALERT BOX ── */
-.alert{border-radius:12px;padding:13px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
-.alert-icon{font-size:20px;flex-shrink:0}
+/* ── ALERTS ── */
+.alert{border-radius:12px;padding:12px 13px;display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.alert-icon{font-size:18px;flex-shrink:0;margin-top:1px}
 .alert-title{font-size:13px;font-weight:700;margin-bottom:2px}
-.alert-desc{font-size:12px;opacity:.9;line-height:1.5}
+.alert-desc{font-size:12px;opacity:.9;line-height:1.4}
 .alert-blue{background:var(--blue-dim);border:1px solid var(--blue);color:var(--blue)}
 .alert-green{background:var(--green-dim);border:1px solid var(--green);color:var(--green)}
 .alert-red{background:var(--red-dim);border:1px solid var(--red);color:var(--red)}
 .alert-amber{background:var(--amber-dim);border:1px solid var(--amber);color:var(--amber)}
 
 /* ── ACTIVITY ── */
-.act-day-label{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;padding:8px 16px 6px;background:var(--bg);position:sticky;top:0}
-.act-row{display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);align-items:flex-start}
+.act-row{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);align-items:flex-start}
 .act-row:last-child{border-bottom:none}
-.act-pip{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.act-text{font-size:13px;font-weight:500;line-height:1.5;flex:1}
-.act-time{font-size:11px;color:var(--t3);margin-top:3px}
+.act-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-text{font-size:13px;font-weight:500;line-height:1.4;flex:1}
+.act-time{font-size:10px;color:var(--t3);margin-top:2px}
 
 /* ── RECON ── */
-.recon-col-hdr{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:8px 16px;background:var(--surface2);font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
-.recon-entry{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:13px}
+.recon-col-hdr{display:grid;grid-template-columns:1fr 56px 70px 28px;gap:6px;padding:8px 14px;background:var(--surface2);font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.recon-entry{display:grid;grid-template-columns:1fr 56px 70px 28px;gap:6px;padding:11px 14px;border-bottom:1px solid var(--border);align-items:center;font-size:12px}
 .recon-entry:last-child{border-bottom:none}
-.recon-check{width:24px;height:24px;border-radius:7px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .15s;flex-shrink:0}
+.recon-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:all .15s;flex-shrink:0}
 .recon-check.ok{background:var(--green);border-color:var(--green);color:#fff}
-.recon-diff-card{margin:0 16px 16px;border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:space-between}
+.recon-diff-card{margin:0 14px 14px;border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between}
 .recon-diff-card.balanced{background:var(--green-dim);border:1px solid var(--green)}
 .recon-diff-card.unbal{background:var(--red-dim);border:1px solid var(--red)}
 
 /* ── PIN & AUTH ── */
-#pin-screen,#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px}
-.auth-wrap{width:100%;max-width:360px}
-.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
-.auth-logo-icon{font-size:32px}
-.auth-logo-text{font-size:26px;font-weight:800;letter-spacing:-.5px}
+#pin-screen,#auth-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;padding-top:calc(20px + env(safe-area-inset-top));
+}
+.auth-wrap{width:100%;max-width:340px}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.auth-logo-icon{font-size:30px}
+.auth-logo-text{font-size:24px;font-weight:800;letter-spacing:-.5px}
 .auth-logo-text span{color:var(--blue)}
-.pin-dots{display:flex;gap:14px;justify-content:center;margin:24px 0 28px}
-.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
-.pin-dot.on{background:var(--blue);border-color:var(--blue);transform:scale(1.1)}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;margin:0 auto}
-.pin-btn{padding:18px;border-radius:16px;background:var(--surface);border:1.5px solid var(--border);font-size:22px;font-weight:700;transition:all .15s}
-.pin-btn:active{transform:scale(.93);background:var(--surface2)}
-.pin-sub{font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.12em;margin-top:2px}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin:20px 0 24px}
+.pin-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--border2);transition:all .2s}
+.pin-dot.on{background:var(--blue);border-color:var(--blue);transform:scale(1.15)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto}
+.pin-btn{
+  padding:16px;border-radius:14px;
+  background:var(--surface);border:1.5px solid var(--border);
+  font-size:22px;font-weight:700;text-align:center;
+}
+.pin-btn:active{transform:scale(.92);background:var(--surface3)}
+.pin-sub{font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.1em;margin-top:1px}
 .pin-btn.zero{grid-column:2}
-.pin-btn.back{background:transparent;border-color:transparent;font-size:24px}
-.pin-err{text-align:center;color:var(--red);font-size:13px;font-weight:600;margin-top:12px;min-height:20px}
-.pin-forgot{text-align:center;color:var(--blue);font-size:13px;margin-top:16px;cursor:pointer;font-weight:500}
+.pin-btn.back{background:transparent;border-color:transparent;font-size:22px}
+.pin-err{text-align:center;color:var(--red);font-size:13px;font-weight:600;margin-top:10px;min-height:20px}
+.pin-forgot{text-align:center;color:var(--blue);font-size:13px;margin-top:14px;cursor:pointer;font-weight:600}
 
 /* ── MISC ── */
-hr{border:none;border-top:1px solid var(--border);margin:16px 0}
-.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+.mono{font-variant-numeric:tabular-nums}
 .c-green{color:var(--green)}
 .c-red{color:var(--red)}
 .c-amber{color:var(--amber)}
@@ -273,7 +391,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="auth-logo-icon">🏦</div>
       <div class="auth-logo-text">Bank<span>Book</span></div>
     </div>
-    <p style="color:var(--t3);font-size:14px">Enter your 4-digit PIN</p>
+    <p style="color:var(--t3);font-size:14px" id="pin-subtitle">Enter your PIN</p>
     <div class="pin-dots">
       <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
       <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
@@ -329,6 +447,11 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <button class="icon-btn" onclick="openSheet('sh-profile')" style="margin-left:6px">👤</button>
   </div>
 
+  <!-- View Only Banner -->
+  <div id="vo-banner" style="display:none;background:var(--amber);padding:8px 14px;display:none;align-items:center;justify-content:center;gap:8px;flex-shrink:0">
+    <span style="font-size:14px">👁️</span>
+    <span style="font-size:12px;font-weight:700;color:#000">View Only Mode — No changes can be made</span>
+  </div>
   <!-- Pages -->
   <div class="pages" id="pages">
 
@@ -347,7 +470,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <strong>No data loading?</strong> Firestore rules may be blocking access.<br>
         <span style="font-size:12px;opacity:.9">Firebase Console → Firestore Database → Rules → paste rules → Publish</span>
       </div>
-      <div style="padding:0 16px;margin-bottom:20px" id="acct-cards">
+      <div style="padding:0 14px;margin-bottom:16px" id="acct-cards">
         <div class="empty"><div class="empty-icon">🏦</div><div class="empty-text">No accounts yet</div><div class="empty-sub">Tap + Account to add one</div></div>
       </div>
 
@@ -404,7 +527,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="chip" onclick="setTab(this,'returned')">Returned</div>
         <div class="chip" onclick="setTab(this,'transferred')">Transferred</div>
       </div>
-      <div class="card" style="margin:0 16px" id="cheq-list"></div>
+      <div class="card" style="margin:0 14px" id="cheq-list"></div>
     </div>
 
     <!-- ─ TRANSACTIONS ─ -->
@@ -420,7 +543,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="chip" onclick="setTxnFilter(this,'transfer')">Transfers</div>
         <div class="chip" onclick="setTxnFilter(this,'bank_charge')">Charges</div>
       </div>
-      <div class="card" style="margin:0 16px" id="txn-list"></div>
+      <div class="card" style="margin:0 14px" id="txn-list"></div>
     </div>
 
     <!-- ─ RECONCILE ─ -->
@@ -447,18 +570,18 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="chip" onclick="setActFilter(this,'account')">Accounts</div>
         <div class="chip" onclick="setActFilter(this,'recon')">Reconcile</div>
       </div>
-      <div class="card" style="margin:0 16px;overflow:visible" id="act-list"></div>
+      <div class="card" style="margin:0 14px;overflow:visible" id="act-list"></div>
     </div>
 
   </div><!-- /pages -->
 
   <!-- Bottom nav -->
   <div class="bottom-nav">
-    <button class="nav-item on" id="nav-home" onclick="showPage('home')"><div class="ni">🏠</div>Home</button>
-    <button class="nav-item" id="nav-cheques" onclick="showPage('cheques')"><div class="ni">📋</div>Cheques</button>
-    <button class="nav-item" id="nav-txns" onclick="showPage('txns')"><div class="ni">💳</div>Transactions</button>
-    <button class="nav-item" id="nav-recon" onclick="showPage('recon')"><div class="ni">🔁</div>Reconcile</button>
-    <button class="nav-item" id="nav-activity" onclick="showPage('activity')"><div class="ni">📊</div>Activity</button>
+    <button class="nav-item on" id="nav-home" onclick="showPage('home')"><div class="ni">🏠</div><span>Home</span></button>
+    <button class="nav-item" id="nav-cheques" onclick="showPage('cheques')"><div class="ni">📋</div><span>Cheques</span></button>
+    <button class="nav-item" id="nav-txns" onclick="showPage('txns')"><div class="ni">💳</div><span>Txns</span></button>
+    <button class="nav-item" id="nav-recon" onclick="showPage('recon')"><div class="ni">🔁</div><span>Recon</span></button>
+    <button class="nav-item" id="nav-activity" onclick="showPage('activity')"><div class="ni">📊</div><span>Activity</span></button>
   </div>
 
 </div><!-- /shell -->
@@ -485,7 +608,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <div class="fgrp"><label>Account Name *</label><input id="aa-name" placeholder="e.g. Main Savings"></div>
     <div class="fgrp"><label>Bank Name</label><input id="aa-bank" placeholder="e.g. Commercial Bank of Ceylon"></div>
     <div class="fgrp"><label>Account Number</label><input id="aa-num" placeholder="Optional"></div>
-    <div class="fgrp"><label>Opening Balance (Rs.)</label><input type="number" id="aa-bal" value="0" placeholder="0.00"></div>
+    <div class="fgrp"><label>Opening Balance (Rs.)</label><input type="text" inputmode="decimal" id="aa-bal" value="0" placeholder="0.00" oninput="fmtAmt(this)"></div>
   </div>
   <div class="sheet-footer">
     <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-add-acct')">Cancel</button>
@@ -511,7 +634,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
     <div class="fgrp" id="txn-to-grp" style="display:none"><label>Transfer To Account *</label><select id="txn-to-acct"></select></div>
     <div class="frow">
-      <div class="fgrp"><label>Amount (Rs.) *</label><input type="number" id="txn-amt" placeholder="0.00"></div>
+      <div class="fgrp"><label>Amount (Rs.) *</label><input type="text" inputmode="decimal" id="txn-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
       <div class="fgrp"><label>Date *</label><input type="date" id="txn-date"></div>
     </div>
     <div class="fgrp"><label>Description</label><input id="txn-desc" placeholder="What is this for?"></div>
@@ -533,13 +656,12 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <div class="fgrp"><label>Party Name *</label><input id="cheq-party" placeholder="Who gave / who received this cheque?"></div>
     <div class="frow">
       <div class="fgrp"><label>Cheque No. *</label><input id="cheq-no" placeholder="001234"></div>
-      <div class="fgrp"><label>Amount (Rs.) *</label><input type="number" id="cheq-amt" placeholder="0.00"></div>
+      <div class="fgrp"><label>Amount (Rs.) *</label><input type="text" inputmode="decimal" id="cheq-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
     </div>
     <div class="frow">
       <div class="fgrp"><label>Cheque Date *</label><input type="date" id="cheq-date"></div>
       <div class="fgrp"><label>Drawn on Bank</label><input id="cheq-bank" placeholder="Bank name"></div>
     </div>
-    <div class="fgrp"><label>Our Account</label><select id="cheq-acct"></select></div>
     <div class="fgrp"><label>Notes</label><input id="cheq-notes" placeholder="Optional"></div>
   </div>
   <div class="sheet-footer">
@@ -597,6 +719,23 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   </div>
 </div></div>
 
+<!-- Deposit Cheque Sheet -->
+<div class="overlay" id="sh-deposit" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Deposit Cheque</div><button class="sheet-close" onclick="closeSheet('sh-deposit')">✕</button></div>
+  <div class="sheet-body">
+    <input type="hidden" id="dep-cheq-id">
+    <div id="dep-cheq-info" style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:16px"></div>
+    <div class="fgrp"><label>Deposit to Account *</label><select id="dep-acct"></select></div>
+    <div class="fgrp"><label>Deposit Date</label><input type="date" id="dep-date"></div>
+    <div class="fgrp"><label>Notes</label><input id="dep-notes" placeholder="Optional"></div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-deposit')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doDeposit()">Confirm Deposit</button>
+  </div>
+</div></div>
+
 <!-- Reconciliation Setup -->
 <div class="overlay" id="sh-recon-setup" onclick="oc(event,this)">
 <div class="sheet"><div class="sheet-handle"></div>
@@ -618,7 +757,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
       </div>
       <div class="fgrp" style="margin-bottom:10px"><label>Description</label><input id="be-desc" placeholder="e.g. Salary deposit"></div>
-      <div class="fgrp" style="margin-bottom:10px"><label>Amount (Rs.)</label><input type="number" id="be-amt" placeholder="0.00"></div>
+      <div class="fgrp" style="margin-bottom:10px"><label>Amount (Rs.)</label><input type="text" inputmode="decimal" id="be-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
       <button class="btn btn-primary btn-sm btn-full" onclick="saveBankEntry()">Add This Entry</button>
     </div>
   </div>
@@ -633,14 +772,17 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <div class="sheet"><div class="sheet-handle"></div>
   <div class="sheet-hdr"><div class="sheet-title">Settings</div><button class="sheet-close" onclick="closeSheet('sh-profile')">✕</button></div>
   <div class="sheet-body">
-    <div style="text-align:center;padding:10px 0 24px">
-      <div style="font-size:48px;margin-bottom:8px">👤</div>
+    <div style="text-align:center;padding:10px 0 20px">
+      <div style="font-size:48px;margin-bottom:8px" id="profile-icon">👤</div>
       <div id="profile-email" style="font-size:16px;font-weight:700"></div>
+      <div id="profile-mode-badge" style="margin-top:6px"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <button class="btn btn-ghost btn-full" onclick="toggleTheme()">🎨 &nbsp;Switch Theme (Dark / Light)</button>
-      <button class="btn btn-ghost btn-full" onclick="openSetPin()">🔐 &nbsp;Set PIN Lock</button>
-      <button class="btn btn-ghost btn-full" onclick="doExport()">📊 &nbsp;Export to CSV</button>
+      <button class="btn btn-ghost btn-full" id="set-pin-btn" onclick="openSetPin()">🔐 &nbsp;Set PIN Locks</button>
+      <button class="btn btn-ghost btn-full" id="staff-btn" onclick="openSheet('sh-staff-emails')">👥 &nbsp;Manage Staff Emails</button>
+      <button class="btn btn-ghost btn-full" id="report-btn" onclick="openSheet('sh-reports')">📊 &nbsp;Generate Report</button>
+      <button class="btn btn-ghost btn-full" id="export-btn" onclick="doExport()">📤 &nbsp;Export to CSV</button>
       <button class="btn btn-danger btn-full" style="margin-top:8px" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -649,14 +791,74 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <!-- Set PIN -->
 <div class="overlay" id="sh-set-pin" onclick="oc(event,this)">
 <div class="sheet"><div class="sheet-handle"></div>
-  <div class="sheet-hdr"><div class="sheet-title">Set PIN Lock</div><button class="sheet-close" onclick="closeSheet('sh-set-pin')">✕</button></div>
+  <div class="sheet-hdr"><div class="sheet-title">Set PIN Locks</div><button class="sheet-close" onclick="closeSheet('sh-set-pin')">✕</button></div>
   <div class="sheet-body">
-    <div class="fgrp"><label>New PIN (4 digits)</label><input type="password" id="np1" maxlength="4" inputmode="numeric" placeholder="••••"></div>
-    <div class="fgrp"><label>Confirm PIN</label><input type="password" id="np2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="alert alert-blue" style="margin-bottom:16px">
+      <div class="alert-icon">🔐</div>
+      <div><div class="alert-title">Two PINs</div><div class="alert-desc">Admin PIN gives full access. View-Only PIN lets others see everything but not make any changes.</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">🔑 Admin PIN (Full Access)</div>
+    <div class="fgrp"><label>Admin PIN (4 digits)</label><input type="password" id="np1" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fgrp"><label>Confirm Admin PIN</label><input type="password" id="np2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--t1);margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border)">👁️ View-Only PIN (Read Only)</div>
+    <div class="fgrp"><label>View-Only PIN (4 digits)</label><input type="password" id="vp1" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <div class="fgrp"><label>Confirm View-Only PIN</label><input type="password" id="vp2" maxlength="4" inputmode="numeric" placeholder="••••"></div>
+    <p class="hint">Leave View-Only PIN blank to disable it.</p>
   </div>
   <div class="sheet-footer">
     <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-set-pin')">Cancel</button>
-    <button class="btn btn-primary" style="flex:2" onclick="doSavePin()">Save PIN</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doSavePin()">Save PINs</button>
+  </div>
+</div></div>
+
+<!-- Staff Emails Sheet -->
+<div class="overlay" id="sh-staff-emails" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Staff Emails</div><button class="sheet-close" onclick="closeSheet('sh-staff-emails')">✕</button></div>
+  <div class="sheet-body">
+    <div class="alert alert-blue"><div class="alert-icon">👥</div><div><div class="alert-title">Staff Role</div><div class="alert-desc">Staff can create and read all data but cannot edit or delete. Add their Gmail addresses below.</div></div></div>
+    <div class="fgrp"><label>Staff Gmail Addresses</label>
+      <textarea id="staff-emails-input" rows="5" style="resize:none;border-radius:12px;background:var(--surface2);border:1.5px solid var(--border);padding:12px;width:100%;font-size:14px;color:var(--t1)" placeholder="one@gmail.com&#10;two@gmail.com&#10;(one per line)"></textarea>
+    </div>
+    <p style="font-size:12px;color:var(--t3)">Each person logs in with their own Google / Email account. Staff role is determined by their email address.</p>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-staff-emails')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doSaveStaffEmails()">Save</button>
+  </div>
+</div></div>
+
+<!-- Reports Sheet -->
+<div class="overlay" id="sh-reports" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Generate Report</div><button class="sheet-close" onclick="closeSheet('sh-reports')">✕</button></div>
+  <div class="sheet-body">
+    <div class="fgrp"><label>Account</label><select id="rpt-acct"><option value="all">All Accounts</option></select></div>
+    <div class="frow">
+      <div class="fgrp"><label>From Date</label><input type="date" id="rpt-from"></div>
+      <div class="fgrp"><label>To Date</label><input type="date" id="rpt-to"></div>
+    </div>
+    <div class="fgrp"><label>Report Format</label>
+      <select id="rpt-format">
+        <option value="screen">View on Screen</option>
+        <option value="csv">Download CSV</option>
+      </select>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-reports')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doGenerateReport()">Generate →</button>
+  </div>
+</div></div>
+
+<!-- Report Viewer Sheet -->
+<div class="overlay" id="sh-report-view" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title" id="rpt-view-title">Report</div><button class="sheet-close" onclick="closeSheet('sh-report-view')">✕</button></div>
+  <div class="sheet-body" id="rpt-view-body" style="padding:0"></div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-report-view')">Close</button>
+    <button class="btn btn-primary" style="flex:2" onclick="downloadReport()">📥 Download CSV</button>
   </div>
 </div></div>
 
@@ -666,6 +868,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 'use strict';
+// ── VERSION ── (bump this on every update; drives auto-update detection)
+const APP_VERSION='3.0.0';
 // ── CONFIG ──
 const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book-afedf.firebaseapp.com",
   projectId:"bank-book-afedf",storageBucket:"bank-book-afedf.firebasestorage.app",
@@ -673,6 +877,17 @@ const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book
 
 // ── STATE ──
 let ACCTS=[],TXNS=[],CHEQS=[],ACTS=[];
+let VIEW_ONLY=false; // true when logged in with view-only PIN
+let IS_STAFF=false;  // true for staff Gmail - can create+read, no update/delete
+// Add staff Gmail addresses here (comma separated in localStorage or hardcoded)
+function getStaffEmails(){
+  const stored=localStorage.getItem('bb_staff_emails')||'';
+  return stored.split(',').map(e=>e.trim().toLowerCase()).filter(Boolean);
+}
+function checkRole(){
+  const email=(me?.email||'').toLowerCase();
+  IS_STAFF=getStaffEmails().includes(email);
+}
 let BANK_ENTRIES={}; // acctId -> [{date,type,desc,amount,matched,id}]
 let db=null,auth=null,me=null;
 let curPage='home',cheqTab='received',txnFilt='all',actFilt='all';
@@ -700,8 +915,16 @@ function pinKey(k){
   if(pinBuf.length>=4)return;
   pinBuf+=k;updatePinUI();
   if(pinBuf.length===4){
-    if(pinBuf===localStorage.getItem('bb_pin')){startApp();}
-    else{document.getElementById('pin-err').textContent='Wrong PIN. Try again.';pinBuf='';updatePinUI();}
+    const adminPin=localStorage.getItem('bb_pin');
+    const viewPin=localStorage.getItem('bb_view_pin');
+    if(adminPin&&pinBuf===adminPin){
+      VIEW_ONLY=false;startApp();
+    } else if(viewPin&&pinBuf===viewPin){
+      VIEW_ONLY=true;startApp();
+    } else {
+      document.getElementById('pin-err').textContent='Wrong PIN. Try again.';
+      pinBuf='';updatePinUI();
+    }
   }
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updatePinUI();document.getElementById('pin-err').textContent='';}
@@ -710,9 +933,20 @@ function gotoAuth(){document.getElementById('pin-screen').style.display='none';d
 function openSetPin(){closeSheet('sh-profile');openSheet('sh-set-pin');}
 function doSavePin(){
   const a=document.getElementById('np1').value,b=document.getElementById('np2').value;
-  if(!/^\d{4}$/.test(a)){toast('PIN must be 4 digits');return;}
-  if(a!==b){toast('PINs do not match');return;}
-  localStorage.setItem('bb_pin',a);closeSheet('sh-set-pin');toast('PIN saved ✓');
+  const va=document.getElementById('vp1').value,vb=document.getElementById('vp2').value;
+  if(!/^\d{4}$/.test(a)){toast('Admin PIN must be 4 digits');return;}
+  if(a!==b){toast('Admin PINs do not match');return;}
+  if(va&&va.length>0){
+    if(!/^\d{4}$/.test(va)){toast('View-Only PIN must be 4 digits');return;}
+    if(va!==vb){toast('View-Only PINs do not match');return;}
+    if(va===a){toast('View-Only PIN must be different from Admin PIN');return;}
+    localStorage.setItem('bb_view_pin',va);
+  } else {
+    localStorage.removeItem('bb_view_pin');
+  }
+  localStorage.setItem('bb_pin',a);
+  closeSheet('sh-set-pin');
+  toast('PINs saved ✓');
 }
 
 // ── FIREBASE ──
@@ -746,11 +980,47 @@ function startApp(){
   document.getElementById('app').style.display='block';
   document.getElementById('profile-email').textContent=me?.email||'';
   setGreeting();
+  checkRole();
+  applyViewOnlyMode();
   subscribe();
   setInterval(autoClear,5*60*1000);
   autoClear();
 }
+function applyViewOnlyMode(){
+  const banner=document.getElementById('vo-banner');
+  if(VIEW_ONLY){
+    banner.style.display='flex';
+    // Hide all add/edit/delete buttons in topbar and page headers
+    document.querySelectorAll('.ph .btn, .qa-btn, #cheq-detail-footer .btn-primary, #cheq-detail-footer .btn-danger, #cheq-detail-footer .btn-success').forEach(b=>{
+      if(!b.classList.contains('btn-ghost')||b.textContent.includes('Edit')||b.textContent.includes('Del')){
+        b.style.display='none';
+      }
+    });
+  } else {
+    banner.style.display='none';
+  }
+}
 function uid(){return me.uid;}
+
+// ── AMOUNT FORMATTING (comma every 3 digits) ──
+function fmtN(n){return Number(n||0).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtAmt(el){
+  let v=el.value.replace(/[^0-9.]/g,'');
+  const parts=v.split('.');
+  parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
+}
+function parseAmt(id){
+  return parseFloat((document.getElementById(id)?.value||'0').replace(/,/g,''))||0;
+}
+function guardVO(){
+  if(VIEW_ONLY){toast('👁️ View Only — no changes allowed');return true;}
+  return false;
+}
+function guardStaffUpdate(){
+  if(IS_STAFF){toast('Staff accounts cannot edit or delete');return true;}
+  return false;
+}
 function c(n){return db.collection('users').doc(uid()).collection(n);}
 
 // ── SUBSCRIBE ──
@@ -792,6 +1062,7 @@ function log(type,text,color){
 
 // ── ACCOUNTS ──
 function doAddAcct(){
+  if(guardVO())return;
   const name=g('aa-name').trim(),bank=g('aa-bank').trim(),num=g('aa-num').trim(),bal=parseFloat(g('aa-bal'))||0;
   if(!name){toast('Account name is required');return;}
   c('accounts').add({name,bank,number:num,openingBalance:bal,createdAt:fts()}).then(()=>{
@@ -809,8 +1080,12 @@ function acctBal(id){
     else if(t.type==='transfer'){if(t.accountId===id)b-=t.amount;if(t.toAccountId===id)b+=t.amount;}
   });
   CHEQS.filter(q=>q.accountId===id).forEach(q=>{
+    // Received: add when deposited or cleared
     if(q.dir==='recv'&&(q.stage==='deposited'||q.stage==='cleared'))b+=q.amount;
-    if(q.dir==='issue'&&(q.stage==='issued'||q.stage==='cleared'))b-=q.amount;
+    // Issued: only reduce balance when cleared (i.e. cheque arrived at bank & cleared)
+    // The cheque 'date' field = date cheque arrives at bank / due date
+    if(q.dir==='issue'&&q.stage==='cleared')b-=q.amount;
+    // Returned received cheque: reverse the deposit
     if(q.dir==='recv'&&q.stage==='returned'&&!q.collectedBack)b-=q.amount;
   });
   return b;
@@ -821,7 +1096,8 @@ function txnTypeChange(){
   document.getElementById('txn-to-grp').style.display=document.getElementById('txn-type').value==='transfer'?'':'none';
 }
 function doSaveTxn(){
-  const eid=g('txn-edit-id'),acct=g('txn-acct'),type=g('txn-type'),amt=parseFloat(g('txn-amt'))||0,
+  if(guardVO())return;
+  const eid=g('txn-edit-id'),acct=g('txn-acct'),type=g('txn-type'),amt=parseAmt('txn-amt'),
     date=g('txn-date'),desc=g('txn-desc').trim(),ref=g('txn-ref').trim(),toAcct=g('txn-to-acct');
   if(!acct||!amt||!date){toast('Fill account, amount and date');return;}
   const data={accountId:acct,type,amount:amt,date,desc,ref,toAccountId:type==='transfer'?toAcct:'',updatedAt:fts()};
@@ -836,12 +1112,14 @@ function editTxn(id){
   const t=TXNS.find(x=>x.id===id);if(!t)return;
   fillAcctSelects();
   sv('txn-edit-id',id);sv('txn-sh-title','Edit Transaction');
-  sv('txn-acct',t.accountId);sv('txn-type',t.type);sv('txn-amt',t.amount);
+  sv('txn-acct',t.accountId);sv('txn-type',t.type);sv('txn-amt',fmtN(t.amount));
   sv('txn-date',t.date);sv('txn-desc',t.desc||'');sv('txn-ref',t.ref||'');
   txnTypeChange();if(t.toAccountId)sv('txn-to-acct',t.toAccountId);
   openSheet('sh-add-txn');
 }
 function delTxn(id){
+  if(guardVO())return;
+  if(guardStaffUpdate())return;
   if(!confirm('Delete this transaction?'))return;
   const t=TXNS.find(x=>x.id===id);
   c('transactions').doc(id).delete().then(()=>{log('txn',`Transaction deleted: ${t?.desc||t?.type}`,'#f43f5e');toast('Deleted');});
@@ -849,18 +1127,20 @@ function delTxn(id){
 
 // ── CHEQUES ──
 function openAddCheque(dir){
+  if(guardVO())return;
   sv('cheq-edit-id','');sv('cheq-dir',dir);
   document.getElementById('cheq-sh-title').textContent=dir==='recv'?'Receive Cheque':'Issue Cheque';
-  fillAcctSelects();sv('cheq-date',today());
-  ['cheq-party','cheq-no','cheq-bank','cheq-notes'].forEach(id=>sv(id,''));sv('cheq-amt','');
+  sv('cheq-date',today());
+  ['cheq-party','cheq-no','cheq-bank','cheq-notes','cheq-amt'].forEach(id=>sv(id,''));
   openSheet('sh-add-cheq');
 }
 function doSaveCheq(){
+  if(guardVO())return;
   const eid=g('cheq-edit-id'),dir=g('cheq-dir'),party=g('cheq-party').trim(),no=g('cheq-no').trim(),
-    amt=parseFloat(g('cheq-amt'))||0,date=g('cheq-date'),bank=g('cheq-bank').trim(),
-    acct=g('cheq-acct'),notes=g('cheq-notes').trim();
+    amt=parseAmt('cheq-amt'),date=g('cheq-date'),bank=g('cheq-bank').trim(),notes=g('cheq-notes').trim();
   if(!party||!no||!amt||!date){toast('Fill party name, cheque no., amount and date');return;}
-  const data={dir,party,no,bank,amount:amt,date,accountId:acct,notes,updatedAt:fts()};
+  // No account stored at entry — account assigned at deposit time
+  const data={dir,party,no,bank,amount:amt,date,accountId:'',notes,updatedAt:fts()};
   if(eid){
     c('cheques').doc(eid).update(data).then(()=>{log('cheque',`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,'#f59e0b');closeSheet('sh-add-cheq');toast('Updated ✓');});
   } else {
@@ -870,7 +1150,34 @@ function doSaveCheq(){
     });
   }
 }
+// Open deposit sheet
+function openDeposit(id){
+  closeSheet('sh-cheq-detail');
+  const q=CHEQS.find(x=>x.id===id);if(!q)return;
+  sv('dep-cheq-id',id);sv('dep-date',today());sv('dep-notes','');
+  document.getElementById('dep-cheq-info').innerHTML=`
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">Cheque #${es(q.no)} — ${es(q.party)}</div>
+    <div style="font-size:20px;font-weight:800;color:var(--green)">Rs. ${fm(q.amount)}</div>
+    <div style="font-size:12px;color:var(--t3);margin-top:2px">${q.date} · ${es(q.bank||'')}</div>`;
+  fillAcctSelects();
+  openSheet('sh-deposit');
+}
+function doDeposit(){
+  if(guardVO())return;
+  const id=g('dep-cheq-id'),acct=g('dep-acct'),date=g('dep-date'),notes=g('dep-notes').trim();
+  if(!acct){toast('Select an account');return;}
+  const q=CHEQS.find(x=>x.id===id);
+  c('cheques').doc(id).update({
+    stage:'deposited',accountId:acct,depositedAt:new Date().toISOString(),
+    depositDate:date,depositNotes:notes,updatedAt:fts()
+  }).then(()=>{
+    log('cheque',`Cheque #${q?.no} deposited to ${ACCTS.find(a=>a.id===acct)?.name}`,'#4f80ff');
+    closeSheet('sh-deposit');toast('Cheque deposited ✓');
+  });
+}
 function setStage(id,stage,extra={}){
+  if(guardVO())return;
+  if(IS_STAFF&&['cleared','returned'].includes(stage)){toast('Staff cannot change cheque status');return;}
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({stage,...extra,updatedAt:fts()}).then(()=>{
     log('cheque',`Cheque #${q?.no} → ${stage}`,'#a78bfa');
@@ -925,7 +1232,7 @@ function openCheqDetail(id){
   let btns='';
   if(q.dir==='recv'){
     if(q.stage==='received'){
-      btns+=`<button class="btn btn-primary btn-sm" onclick="setStage('${id}','deposited',{depositedAt:'${new Date().toISOString()}'})">📥 Mark Deposited</button>`;
+      btns+=`<button class="btn btn-primary btn-sm" onclick="openDeposit('${id}')">📥 Deposit to Account</button>`;
       btns+=`<button class="btn btn-ghost btn-sm" onclick="openTransfer('${id}')">📤 Transfer to Someone</button>`;
     }
     if(q.stage==='deposited'){
@@ -951,12 +1258,14 @@ function editCheq(id){
   const q=CHEQS.find(x=>x.id===id);if(!q)return;
   sv('cheq-edit-id',id);sv('cheq-dir',q.dir);
   document.getElementById('cheq-sh-title').textContent='Edit Cheque';
-  sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',q.amount);
+  sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',fmtN(q.amount));
   sv('cheq-date',q.date);sv('cheq-bank',q.bank||'');sv('cheq-notes',q.notes||'');
-  fillAcctSelects();setTimeout(()=>sv('cheq-acct',q.accountId),60);
+  // Account no longer stored at entry level
   openSheet('sh-add-cheq');
 }
 function delCheq(id){
+  if(guardVO())return;
+  if(guardStaffUpdate())return;
   if(!confirm('Delete this cheque?'))return;
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).delete().then(()=>{log('cheque',`Cheque #${q?.no} deleted`,'#f43f5e');closeSheet('sh-cheq-detail');toast('Deleted');});
@@ -965,6 +1274,7 @@ function delCheq(id){
 // ── TRANSFER ──
 function openTransfer(id){closeSheet('sh-cheq-detail');sv('tr-cheq-id',id);sv('tr-date',today());sv('tr-to','');sv('tr-notes','');openSheet('sh-transfer');}
 function doTransfer(){
+  if(guardVO())return;
   const id=g('tr-cheq-id'),to=g('tr-to').trim(),date=g('tr-date'),notes=g('tr-notes').trim();
   if(!to){toast('Enter the party name');return;}
   const q=CHEQS.find(x=>x.id===id);
@@ -976,6 +1286,7 @@ function doTransfer(){
 // ── COLLECT ──
 function openCollect(id){closeSheet('sh-cheq-detail');sv('col-cheq-id',id);sv('col-date',today());openSheet('sh-collect');}
 function doCollect(){
+  if(guardVO())return;
   const id=g('col-cheq-id'),date=g('col-date'),method=g('col-method'),notes=g('col-notes').trim();
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({collectedBack:true,collectedDate:date,collectedMethod:method,collectedNotes:notes,updatedAt:fts()}).then(()=>{
@@ -1009,7 +1320,7 @@ function autoClear(){
 // ── RECONCILIATION ──
 function addBankEntry(){document.getElementById('be-form').style.display='block';sv('be-date',today());sv('be-desc','');sv('be-amt','');}
 function saveBankEntry(){
-  const date=g('be-date'),type=g('be-type'),desc=g('be-desc').trim(),amt=parseFloat(g('be-amt'))||0;
+  const date=g('be-date'),type=g('be-type'),desc=g('be-desc').trim(),amt=parseAmt('be-amt');
   if(!amt||!date){toast('Fill date and amount');return;}
   tempBE.push({id:'be'+Date.now(),date,type,desc,amount:amt,matched:false});
   renderBE();document.getElementById('be-form').style.display='none';
@@ -1028,6 +1339,7 @@ function renderBE(){
     </div>`).join('');
 }
 function runRecon(){
+  if(guardVO())return;
   const acct=g('rs-acct'),date=g('rs-date');
   if(!acct){toast('Select an account');return;}
   if(tempBE.length){
@@ -1075,7 +1387,7 @@ function renderRecon(){
 
   el.innerHTML=`
     <!-- Balance summary -->
-    <div style="padding:0 16px;margin-bottom:16px">
+    <div style="padding:0 14px;margin-bottom:16px">
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
           <div style="padding:16px;border-right:1px solid var(--border)">
@@ -1098,7 +1410,7 @@ function renderRecon(){
     </div>
 
     <!-- Book Transactions -->
-    <div style="padding:0 16px;margin-top:20px">
+    <div style="padding:0 14px;margin-top:16px">
       <div class="sec-label">Your Book Transactions (running balance)</div>
       <div class="card">
         ${bookItems.length?`
@@ -1115,7 +1427,7 @@ function renderRecon(){
     </div>
 
     <!-- Bank Entries -->
-    <div style="padding:0 16px;margin-top:20px">
+    <div style="padding:0 14px;margin-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="sec-label" style="margin-bottom:0">Bank Statement Entries (tap ✓ to match)</div>
         <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-recon-setup')">+ Add</button>
@@ -1135,7 +1447,7 @@ function renderRecon(){
     </div>
 
     ${returnedCheqs.length?`
-    <div style="padding:0 16px;margin-top:20px;margin-bottom:8px">
+    <div style="padding:0 14px;margin-top:16px;margin-bottom:8px">
       <div class="sec-label">Returned Cheques (included in recon)</div>
       <div class="card">
         ${returnedCheqs.map(q=>`
@@ -1180,10 +1492,15 @@ function renderHome(){
   const inC=CHEQS.filter(q=>q.stage==='deposited');
   const iss=CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued');
   const ret=CHEQS.filter(q=>q.stage==='returned'&&!q.collectedBack);
-  sv('stat-todeposit',toD.length);sv('stat-todeposit-amt','Rs. '+fm(toD.reduce((s,q)=>s+q.amount,0)));
-  sv('stat-clearing',inC.length);sv('stat-clearing-amt','Rs. '+fm(inC.reduce((s,q)=>s+q.amount,0)));
-  sv('stat-issued',iss.length);sv('stat-issued-amt','Rs. '+fm(iss.reduce((s,q)=>s+q.amount,0)));
-  sv('stat-returned',ret.length);sv('stat-returned-amt','Rs. '+fm(ret.reduce((s,q)=>s+q.amount,0)));
+  function setstat(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+  setstat('stat-todeposit',toD.length);
+  setstat('stat-todeposit-amt','Rs. '+fm(toD.reduce((s,q)=>s+q.amount,0)));
+  setstat('stat-clearing',inC.length);
+  setstat('stat-clearing-amt','Rs. '+fm(inC.reduce((s,q)=>s+q.amount,0)));
+  setstat('stat-issued',iss.length);
+  setstat('stat-issued-amt','Rs. '+fm(iss.reduce((s,q)=>s+q.amount,0)));
+  setstat('stat-returned',ret.length);
+  setstat('stat-returned-amt','Rs. '+fm(ret.reduce((s,q)=>s+q.amount,0)));
 }
 
 let _cheqTab='received';
@@ -1290,6 +1607,7 @@ function renderAct(){
       </div>`).join('')}`).join('');
 }
 function clearActivity(){
+  if(guardVO())return;
   if(!confirm('Clear all activity?'))return;
   ACTS.forEach(a=>c('activities').doc(a.id).delete());toast('Cleared');
 }
@@ -1336,6 +1654,36 @@ function showPage(name){
 
 // ── SHEETS ──
 function openSheet(id){
+  if(id==='sh-profile'){
+    document.getElementById('profile-email').textContent=me?.email||'';
+    const badge=document.getElementById('profile-mode-badge');
+    const icon=document.getElementById('profile-icon');
+    if(VIEW_ONLY){
+      badge.innerHTML='<span class="badge badge-amber" style="font-size:12px;padding:5px 12px">👁️ View Only Mode</span>';
+      icon.textContent='👁️';
+      document.getElementById('set-pin-btn').style.display='none';
+      document.getElementById('staff-btn').style.display='none';
+      document.getElementById('report-btn').style.display='none';
+      document.getElementById('export-btn').style.display='none';
+    } else {
+      if(IS_STAFF){
+        badge.innerHTML='<span class="badge badge-blue" style="font-size:12px;padding:5px 12px">👥 Staff Mode</span>';
+        icon.textContent='👥';
+      } else {
+        badge.innerHTML='<span class="badge badge-green" style="font-size:12px;padding:5px 12px">🔑 Admin Mode</span>';
+      }
+      icon.textContent='👤';
+      document.getElementById('set-pin-btn').style.display='';
+      document.getElementById('staff-btn').style.display='';
+      document.getElementById('report-btn').style.display='';
+      document.getElementById('export-btn').style.display='';
+    }
+  }
+  if(id==='sh-reports'){openSheet_reports();return;}
+  if(id==='sh-staff-emails'){
+    const stored=localStorage.getItem('bb_staff_emails')||'';
+    document.getElementById('staff-emails-input').value=stored.split(',').filter(Boolean).join('\n');
+  }
   if(id==='sh-add-txn'){fillAcctSelects();sv('txn-edit-id','');sv('txn-sh-title','Add Transaction');sv('txn-date',today());txnTypeChange();}
   if(id==='sh-recon-setup'){fillAcctSelects();sv('rs-date',today());renderBE();}
   document.getElementById(id).classList.add('open');
@@ -1388,6 +1736,137 @@ function toast(msg){
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2200);
 }
 
+// ── STAFF EMAILS ──
+function doSaveStaffEmails(){
+  const raw=document.getElementById('staff-emails-input').value;
+  const emails=raw.split('\n').map(e=>e.trim().toLowerCase()).filter(Boolean).join(',');
+  localStorage.setItem('bb_staff_emails',emails);
+  closeSheet('sh-staff-emails');toast('Staff emails saved ✓');
+  checkRole();applyViewOnlyMode();
+}
+
+// ── REPORTS (Change 4) ──
+let _rptData=[];
+function openSheet_reports(){
+  // populate account select
+  const sel=document.getElementById('rpt-acct');
+  const cur=sel.value;
+  sel.innerHTML='<option value="all">All Accounts</option>'+ACCTS.map(a=>`<option value="${a.id}">${es(a.name)} — ${es(a.bank||'')}</option>`).join('');
+  if(cur)sel.value=cur;
+  // default date range: first of month to today
+  const now=new Date();
+  const firstDay=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  if(!document.getElementById('rpt-from').value)document.getElementById('rpt-from').value=firstDay;
+  if(!document.getElementById('rpt-to').value)document.getElementById('rpt-to').value=today();
+  openSheet('sh-reports');
+}
+function doGenerateReport(){
+  const acctId=g('rpt-acct'),from=g('rpt-from'),to=g('rpt-to'),fmt=g('rpt-format');
+  if(!from||!to){toast('Select date range');return;}
+  if(from>to){toast('From date must be before To date');return;}
+
+  // Build ledger per account
+  const targetAccts=acctId==='all'?ACCTS:ACCTS.filter(a=>a.id===acctId);
+  _rptData=[];
+
+  targetAccts.forEach(acct=>{
+    let rows=[];
+    // Transactions
+    TXNS.filter(t=>t.accountId===acct.id&&t.date>=from&&t.date<=to).forEach(t=>{
+      const isCr=t.type==='deposit'||t.type==='interest';
+      const isTransferIn=t.type==='transfer'&&t.toAccountId===acct.id;
+      const isTransferOut=t.type==='transfer'&&t.accountId===acct.id;
+      rows.push({
+        date:t.date,
+        desc:t.desc||(t.type==='deposit'?'Deposit':t.type==='withdrawal'?'Withdrawal':t.type==='transfer'?'Transfer':t.type==='bank_charge'?'Bank Charge':'Interest'),
+        cr:(isCr||isTransferIn)?t.amount:0,
+        dr:(!isCr&&!isTransferIn||isTransferOut)?t.amount:0,
+        source:'txn'
+      });
+    });
+    // Cheques affecting this account
+    CHEQS.filter(q=>q.accountId===acct.id&&q.date>=from&&q.date<=to).forEach(q=>{
+      if(q.dir==='recv'&&(q.stage==='deposited'||q.stage==='cleared'))
+        rows.push({date:q.depositDate||q.date,desc:`Cheque Deposit #${q.no} ${q.party}`,cr:q.amount,dr:0,source:'cheque'});
+      if(q.dir==='issue'&&q.stage==='cleared')
+        rows.push({date:q.date,desc:`Cheque Issued #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
+      if(q.dir==='recv'&&q.stage==='returned'&&!q.collectedBack)
+        rows.push({date:q.date,desc:`Cheque Returned #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
+    });
+    rows.sort((a,b)=>a.date.localeCompare(b.date));
+    // Running balance - start from opening balance adjusted for pre-range txns
+    let openBal=acct.openingBalance||0;
+    TXNS.filter(t=>t.accountId===acct.id&&t.date<from).forEach(t=>{
+      if(t.type==='deposit'||t.type==='interest')openBal+=t.amount;
+      else if(t.type==='withdrawal'||t.type==='bank_charge')openBal-=t.amount;
+      else if(t.type==='transfer'){if(t.accountId===acct.id)openBal-=t.amount;if(t.toAccountId===acct.id)openBal+=t.amount;}
+    });
+    let bal=openBal;
+    const ledgerRows=rows.map(r=>{bal+=r.cr-r.dr;return{...r,bal};});
+    _rptData.push({acct,openBal,rows:ledgerRows,from,to});
+  });
+
+  if(fmt==='csv'){closeSheet('sh-reports');downloadReport();return;}
+  renderReportScreen();
+  closeSheet('sh-reports');
+  openSheet('sh-report-view');
+}
+function renderReportScreen(){
+  const el=document.getElementById('rpt-view-body');
+  const from=g('rpt-from'),to=g('rpt-to');
+  document.getElementById('rpt-view-title').textContent=`Report ${from} → ${to}`;
+  if(!_rptData.length){el.innerHTML='<div class="empty"><div class="empty-text">No data</div></div>';return;}
+  el.innerHTML=_rptData.map(d=>`
+    <div style="padding:14px 16px;background:var(--surface2);border-bottom:2px solid var(--blue)">
+      <div style="font-size:15px;font-weight:800">${es(d.acct.name)}</div>
+      <div style="font-size:11px;color:var(--t3)">${es(d.acct.bank||'')} · Opening Balance: Rs. ${fm(d.openBal)}</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:420px">
+        <thead>
+          <tr style="background:var(--surface3)">
+            <th style="padding:8px 10px;text-align:left;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Date</th>
+            <th style="padding:8px 10px;text-align:left;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Description</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">DR</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">CR</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${d.rows.length?d.rows.map((r,i)=>`
+            <tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--surface)':'background:var(--surface2)'}">
+              <td style="padding:9px 10px;white-space:nowrap;color:var(--t2)">${r.date}</td>
+              <td style="padding:9px 10px;color:var(--t1)">${es(r.desc)}</td>
+              <td style="padding:9px 10px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${r.dr>0?fm(r.dr):''}</td>
+              <td style="padding:9px 10px;text-align:right;color:var(--green);font-variant-numeric:tabular-nums">${r.cr>0?fm(r.cr):''}</td>
+              <td style="padding:9px 10px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:${r.bal<0?'var(--red)':'var(--t1)'}">${fm(r.bal)}</td>
+            </tr>`).join('')
+          :'<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3)">No transactions in this period</td></tr>'}
+          <tr style="background:var(--surface3);font-weight:800">
+            <td colspan="2" style="padding:10px;font-size:12px">CLOSING BALANCE</td>
+            <td style="padding:10px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${fm(d.rows.reduce((s,r)=>s+r.dr,0))}</td>
+            <td style="padding:10px;text-align:right;color:var(--green);font-variant-numeric:tabular-nums">${fm(d.rows.reduce((s,r)=>s+r.cr,0))}</td>
+            <td style="padding:10px;text-align:right;font-variant-numeric:tabular-nums;color:${(d.rows[d.rows.length-1]?.bal||d.openBal)<0?'var(--red)':'var(--blue)'}">${fm(d.rows[d.rows.length-1]?.bal||d.openBal)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="height:20px"></div>`).join('');
+}
+function downloadReport(){
+  const from=g('rpt-from')||_rptData[0]?.from||'',to=g('rpt-to')||_rptData[0]?.to||'';
+  let csv='Account,Date,Description,DR,CR,Balance\n';
+  _rptData.forEach(d=>{
+    if(!d.rows.length){csv+=`"${d.acct.name}","${from} to ${to}","No transactions",,,"${fm(d.openBal)}"\n`;return;}
+    d.rows.forEach(r=>{
+      csv+=`"${d.acct.name}","${r.date}","${r.desc.replace(/"/g,"''")}","${r.dr>0?fm(r.dr):''}","${r.cr>0?fm(r.cr):''}","${fm(r.bal)}"\n`;
+    });
+  });
+  const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=`bankbook-report-${from}-to-${to}.csv`;a.click();
+  toast('Report downloaded ✓');
+}
+
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('input[type=date]').forEach(el=>{if(!el.value)el.value=today();});
@@ -1398,9 +1877,67 @@ window.addEventListener('DOMContentLoaded',()=>{
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').then(r=>console.log('SW registered')).catch(e=>console.log('SW error',e));
+    // updateViaCache:'none' = browser never HTTP-caches sw.js itself
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'})
+      .then(reg=>{
+        reg.update();
+        // Re-check for updates every time the app becomes visible (PWA resume)
+        document.addEventListener('visibilitychange',()=>{
+          if(document.visibilityState==='visible')reg.update();
+        });
+        // And every 30 minutes while open
+        setInterval(()=>reg.update(),30*60*1000);
+        // If a new SW is waiting, activate it immediately
+        if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');
+        reg.addEventListener('updatefound',()=>{
+          const nw=reg.installing;
+          nw?.addEventListener('statechange',()=>{
+            if(nw.state==='installed'&&navigator.serviceWorker.controller){
+              nw.postMessage('SKIP_WAITING');
+            }
+          });
+        });
+      })
+      .catch(e=>console.log('SW error',e));
+
+    navigator.serviceWorker.addEventListener('message',e=>{
+      if(e.data?.type==='SW_UPDATED'){showUpdateToast();}
+    });
+    let refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(!refreshing){refreshing=true;window.location.reload();}
+    });
   });
 }
+// In-app version poll: fetches the live app.html (bypassing every cache),
+// reads its APP_VERSION, and prompts to update if newer. Belt & braces.
+function checkAppVersion(){
+  fetch('app.html?vchk='+Date.now(),{cache:'no-store'})
+    .then(r=>r.text())
+    .then(html=>{
+      const m=html.match(/APP_VERSION='([\d.]+)'/);
+      if(m&&m[1]!==APP_VERSION)showUpdateToast();
+    }).catch(()=>{});
+}
+function showUpdateToast(){
+  if(document.getElementById('upd-toast'))return;
+  const t=document.createElement('div');
+  t.id='upd-toast';
+  t.innerHTML='⬆️ New version available — <b>tap to update</b>';
+  Object.assign(t.style,{position:'fixed',bottom:'92px',left:'50%',transform:'translateX(-50%)',
+    background:'var(--blue)',color:'#fff',padding:'12px 20px',borderRadius:'24px',
+    fontSize:'13px',fontWeight:'600',zIndex:'9999',boxShadow:'0 6px 24px rgba(0,0,0,.35)',
+    whiteSpace:'nowrap',cursor:'pointer'});
+  t.onclick=()=>{
+    caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>location.reload());
+  };
+  document.body.appendChild(t);
+}
+setTimeout(checkAppVersion,4000);
+setInterval(checkAppVersion,15*60*1000);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')setTimeout(checkAppVersion,1500);
+});
 </script>
 </body>
 </html>
