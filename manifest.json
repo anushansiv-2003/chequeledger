@@ -2,7 +2,7 @@
   "name": "Bank Book",
   "short_name": "BankBook",
   "description": "Family bank book — cheques, transactions, reconciliation",
-  "start_url": "./app.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d0f14",
   "theme_color": "#0d0f14",
