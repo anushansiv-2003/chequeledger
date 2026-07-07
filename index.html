@@ -32,6 +32,7 @@
 /* ── RESET & BASE ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 html{height:100%;height:-webkit-fill-available}
+body,.card,.topbar,.bottom-nav,.sheet,input,select,.stat-box,.acct-card,.qa-btn,.chip{transition:background-color .3s ease,border-color .3s ease,color .2s ease}
 body{
   min-height:100vh;min-height:-webkit-fill-available;
   overflow:hidden;
@@ -43,7 +44,8 @@ body{
   user-select:none;-webkit-user-select:none;
 }
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-button:active{opacity:.65;transform:scale(.97)}
+button{transition:transform .12s ease,opacity .12s ease}
+button:active{opacity:.75;transform:scale(.96)}
 input,select,textarea{
   font-family:inherit;font-size:16px;/* 16px prevents iOS zoom */
   color:var(--t1);background:var(--surface2);
@@ -70,8 +72,8 @@ a{color:var(--blue);text-decoration:none}
   overscroll-behavior:contain;
 }
 .page{display:none}
-.page.active{display:block;animation:fadeUp .2s ease both}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page.active{display:block;animation:fadeUp .28s cubic-bezier(.22,1,.36,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── TOPBAR ── */
 .topbar{
@@ -116,8 +118,9 @@ a{color:var(--blue);text-decoration:none}
   letter-spacing:.02em;text-transform:uppercase;
   min-width:0;
 }
-.nav-item .ni{font-size:20px;line-height:1.2}
+.nav-item .ni{font-size:20px;line-height:1.2;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
 .nav-item.on{color:var(--blue)}
+.nav-item.on .ni{transform:translateY(-2px) scale(1.12)}
 .nav-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
 /* ── PAGE HEADER ── */
@@ -138,6 +141,8 @@ a{color:var(--blue);text-decoration:none}
   position:relative;overflow:hidden;
   cursor:pointer;
 }
+.acct-card:active{transform:scale(.985)}
+.acct-card{transition:transform .15s ease}
 .acct-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--violet))}
 .acct-name{font-size:15px;font-weight:700;margin-bottom:1px}
 .acct-bank{font-size:11px;color:var(--t3);margin-bottom:12px}
@@ -168,7 +173,8 @@ a{color:var(--blue);text-decoration:none}
 /* ── CHEQUE ROW ── */
 .cq-row{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer}
 .cq-row:last-child{border-bottom:none}
-.cq-row:active{background:var(--surface2)}
+.cq-row{transition:background .15s ease}
+.cq-row:active{background:var(--surface2);transform:scale(.995)}
 .cq-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
 .cq-body{flex:1;min-width:0}
 .cq-party{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -181,6 +187,7 @@ a{color:var(--blue);text-decoration:none}
 /* ── TXN ROW ── */
 .txn-row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
 .txn-row:last-child{border-bottom:none}
+.txn-row{transition:background .15s ease}
 .txn-row:active{background:var(--surface2)}
 .txn-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
 .txn-body{flex:1;min-width:0}
@@ -202,8 +209,9 @@ a{color:var(--blue);text-decoration:none}
   background:var(--surface);border:1.5px solid var(--border);
   color:var(--t3);white-space:nowrap;flex-shrink:0;
 }
+.chip{transition:background .2s ease,color .2s ease,border-color .2s ease,transform .12s ease}
 .chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
-.chip:active{opacity:.7}
+.chip:active{transform:scale(.94)}
 
 /* ── TOTAL BAR ── */
 .total-bar{
@@ -254,17 +262,20 @@ a{color:var(--blue);text-decoration:none}
 .overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.7);
   z-index:200;display:none;align-items:flex-end;
+  opacity:0;transition:opacity .25s ease;
 }
-.overlay.open{display:flex}
+.overlay.open{display:flex;animation:ovIn .25s ease both}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
 .sheet{
   background:var(--surface);border-radius:20px 20px 0 0;
   width:100%;max-height:92vh;max-height:92dvh;
   display:flex;flex-direction:column;
   transform:translateY(100%);
-  transition:transform .3s cubic-bezier(.32,0,.67,0);
+  transition:transform .25s cubic-bezier(.55,0,.85,.36);
+  will-change:transform;
   padding-bottom:env(safe-area-inset-bottom);
 }
-.overlay.open .sheet{transform:translateY(0);transition:transform .35s cubic-bezier(.33,1,.68,1)}
+.overlay.open .sheet{transform:translateY(0);transition:transform .42s cubic-bezier(.16,1,.3,1)}
 .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:10px auto 0}
 .sheet-hdr{
   padding:12px 18px 14px;
@@ -297,7 +308,7 @@ a{color:var(--blue);text-decoration:none}
   transition:transform .3s cubic-bezier(.33,1,.68,1);
   padding-bottom:env(safe-area-inset-bottom);
 }
-.notif-overlay.open .notif-drawer{transform:translateX(0)}
+.notif-overlay.open .notif-drawer{transform:translateX(0);transition:transform .38s cubic-bezier(.16,1,.3,1)}
 .notif-hdr{padding:18px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .notif-item{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
 .notif-item:last-child{border-bottom:none}
@@ -857,6 +868,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
 'use strict';
+// ── VERSION ── (bump this on every update; drives auto-update detection)
+const APP_VERSION='3.0.0';
 // ── CONFIG ──
 const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book-afedf.firebaseapp.com",
   projectId:"bank-book-afedf",storageBucket:"bank-book-afedf.firebasestorage.app",
@@ -1864,29 +1877,67 @@ window.addEventListener('DOMContentLoaded',()=>{
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js')
-      .then(r=>{
-        console.log('SW registered');
-        // Check for updates every time app opens
-        r.update();
+    // updateViaCache:'none' = browser never HTTP-caches sw.js itself
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'})
+      .then(reg=>{
+        reg.update();
+        // Re-check for updates every time the app becomes visible (PWA resume)
+        document.addEventListener('visibilitychange',()=>{
+          if(document.visibilityState==='visible')reg.update();
+        });
+        // And every 30 minutes while open
+        setInterval(()=>reg.update(),30*60*1000);
+        // If a new SW is waiting, activate it immediately
+        if(reg.waiting)reg.waiting.postMessage('SKIP_WAITING');
+        reg.addEventListener('updatefound',()=>{
+          const nw=reg.installing;
+          nw?.addEventListener('statechange',()=>{
+            if(nw.state==='installed'&&navigator.serviceWorker.controller){
+              nw.postMessage('SKIP_WAITING');
+            }
+          });
+        });
       })
       .catch(e=>console.log('SW error',e));
 
-    // Listen for update message from SW — reload to get new version
-    navigator.serviceWorker.addEventListener('message', e => {
-      if(e.data?.type==='SW_UPDATED'){
-        console.log('New version available, reloading...');
-        window.location.reload();
-      }
+    navigator.serviceWorker.addEventListener('message',e=>{
+      if(e.data?.type==='SW_UPDATED'){showUpdateToast();}
     });
-
-    // Also reload if controller changes (new SW took over)
     let refreshing=false;
     navigator.serviceWorker.addEventListener('controllerchange',()=>{
       if(!refreshing){refreshing=true;window.location.reload();}
     });
   });
 }
+// In-app version poll: fetches the live app.html (bypassing every cache),
+// reads its APP_VERSION, and prompts to update if newer. Belt & braces.
+function checkAppVersion(){
+  fetch('app.html?vchk='+Date.now(),{cache:'no-store'})
+    .then(r=>r.text())
+    .then(html=>{
+      const m=html.match(/APP_VERSION='([\d.]+)'/);
+      if(m&&m[1]!==APP_VERSION)showUpdateToast();
+    }).catch(()=>{});
+}
+function showUpdateToast(){
+  if(document.getElementById('upd-toast'))return;
+  const t=document.createElement('div');
+  t.id='upd-toast';
+  t.innerHTML='⬆️ New version available — <b>tap to update</b>';
+  Object.assign(t.style,{position:'fixed',bottom:'92px',left:'50%',transform:'translateX(-50%)',
+    background:'var(--blue)',color:'#fff',padding:'12px 20px',borderRadius:'24px',
+    fontSize:'13px',fontWeight:'600',zIndex:'9999',boxShadow:'0 6px 24px rgba(0,0,0,.35)',
+    whiteSpace:'nowrap',cursor:'pointer'});
+  t.onclick=()=>{
+    caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(()=>location.reload());
+  };
+  document.body.appendChild(t);
+}
+setTimeout(checkAppVersion,4000);
+setInterval(checkAppVersion,15*60*1000);
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')setTimeout(checkAppVersion,1500);
+});
 </script>
 </body>
 </html>
