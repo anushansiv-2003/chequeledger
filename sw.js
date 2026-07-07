@@ -1,7 +1,7 @@
 // Bank Book Service Worker — v3
 // Network-first with HTTP-cache bypass so GitHub Pages updates show immediately
 const CACHE = 'bankbook-v3';
-const ASSETS = ['./app.html', './manifest.json'];
+const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -33,15 +33,15 @@ self.addEventListener('fetch', e => {
       url.includes('identitytoolkit') || url.includes('securetoken')) return;
 
   // App shell: network first, BYPASSING HTTP cache (cache:'reload')
-  if (url.endsWith('app.html') || url.endsWith('/') || e.request.mode === 'navigate') {
+  if (url.endsWith('index.html') || url.endsWith('/') || e.request.mode === 'navigate') {
     e.respondWith(
       fetch(new Request(e.request, {cache: 'reload'}))
         .then(res => {
           const clone = res.clone();
-          caches.open(CACHE).then(c => c.put('./app.html', clone));
+          caches.open(CACHE).then(c => c.put('./index.html', clone));
           return res;
         })
-        .catch(() => caches.match('./app.html'))
+        .catch(() => caches.match('./index.html'))
     );
     return;
   }
