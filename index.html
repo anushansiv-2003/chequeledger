@@ -1003,6 +1003,7 @@ function doLogin(){
 function doLogout(){auth.signOut();closeSheet('sh-profile');}
 function startApp(){
   window._appStarted=true;
+  document.documentElement.removeAttribute('data-boot'); // release the boot CSS override
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('pin-screen').style.display='none';
   document.getElementById('app').style.display='block';
