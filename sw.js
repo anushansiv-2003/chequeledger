@@ -1,6 +1,6 @@
-// Bank Book Service Worker — v3
+// Bank Book Service Worker — v4
 // Network-first with HTTP-cache bypass so GitHub Pages updates show immediately
-const CACHE = 'bankbook-v3';
+const CACHE = 'bankbook-v4';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
