@@ -350,6 +350,13 @@ a{color:var(--blue);text-decoration:none}
   display:flex;align-items:center;justify-content:center;
   padding:20px;padding-top:calc(20px + env(safe-area-inset-top));
 }
+/* Boot-time screen choice, set synchronously before paint by an inline script
+   at the top of <body> — returning PIN users never see the email/password
+   screen flash before the PIN pad appears. */
+html[data-boot="pin"] #auth-screen{display:none!important}
+html[data-boot="pin"] #pin-screen{display:flex!important}
+html[data-boot="auth"] #pin-screen{display:none!important}
+html[data-boot="auth"] #auth-screen{display:flex!important}
 .auth-wrap{width:100%;max-width:340px}
 .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:20px}
 .auth-logo-icon{font-size:30px}
@@ -383,6 +390,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 </style>
 </head>
 <body>
+<script>document.documentElement.setAttribute('data-boot', localStorage.getItem('bb_pin') ? 'pin' : 'auth');</script>
 
 <!-- ══ PIN ══ -->
 <div id="pin-screen" style="display:none">
@@ -869,7 +877,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <script>
 'use strict';
 // ── VERSION ── (bump this on every update; drives auto-update detection)
-const APP_VERSION='3.0.0';
+const APP_VERSION='3.1.0';
 // ── CONFIG ──
 const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book-afedf.firebaseapp.com",
   projectId:"bank-book-afedf",storageBucket:"bank-book-afedf.firebasestorage.app",
@@ -890,7 +898,6 @@ function checkRole(){
 }
 let BANK_ENTRIES={}; // acctId -> [{date,type,desc,amount,matched,id}]
 let db=null,auth=null,me=null;
-let curPage='home',cheqTab='received',txnFilt='all',actFilt='all';
 let reconAcct='',reconDate='';
 let tempBE=[];
 
@@ -915,21 +922,32 @@ function pinKey(k){
   if(pinBuf.length>=4)return;
   pinBuf+=k;updatePinUI();
   if(pinBuf.length===4){
-    const adminPin=localStorage.getItem('bb_pin');
-    const viewPin=localStorage.getItem('bb_view_pin');
-    if(adminPin&&pinBuf===adminPin){
-      VIEW_ONLY=false;startApp();
-    } else if(viewPin&&pinBuf===viewPin){
-      VIEW_ONLY=true;startApp();
-    } else {
-      document.getElementById('pin-err').textContent='Wrong PIN. Try again.';
-      pinBuf='';updatePinUI();
+    if(!window._authReady){
+      // Screen was shown optimistically (zero-flicker boot) before Firebase
+      // finished restoring the session — validate as soon as it's ready.
+      document.getElementById('pin-subtitle').textContent='Checking session…';
+      window._pendingPin=pinBuf;
+      return;
     }
+    validatePin(pinBuf);
+  }
+}
+function validatePin(entered){
+  const adminPin=localStorage.getItem('bb_pin');
+  const viewPin=localStorage.getItem('bb_view_pin');
+  if(adminPin&&entered===adminPin){
+    VIEW_ONLY=false;startApp();
+  } else if(viewPin&&entered===viewPin){
+    VIEW_ONLY=true;startApp();
+  } else {
+    document.getElementById('pin-subtitle').textContent='Enter your PIN';
+    document.getElementById('pin-err').textContent='Wrong PIN. Try again.';
+    pinBuf='';updatePinUI();
   }
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updatePinUI();document.getElementById('pin-err').textContent='';}
 function updatePinUI(){for(let i=0;i<4;i++)document.getElementById('pd'+i).className='pin-dot'+(i<pinBuf.length?' on':'');}
-function gotoAuth(){document.getElementById('pin-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';}
+function gotoAuth(){document.documentElement.setAttribute('data-boot','auth');document.getElementById('pin-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';}
 function openSetPin(){closeSheet('sh-profile');openSheet('sh-set-pin');}
 function doSavePin(){
   const a=document.getElementById('np1').value,b=document.getElementById('np2').value;
@@ -955,13 +973,22 @@ function initFB(){
   firebase.initializeApp(FB);
   db=firebase.firestore();auth=firebase.auth();
   auth.onAuthStateChanged(u=>{
-    if(u){me=u;
-      if(localStorage.getItem('bb_pin')&&!window._pinShown){
+    if(u){
+      me=u;window._authReady=true;
+      if(window._appStarted||window._pinShown)return; // ignore late refires mid-session
+      if(localStorage.getItem('bb_pin')){
         window._pinShown=true;
+        document.documentElement.setAttribute('data-boot','pin');
         document.getElementById('auth-screen').style.display='none';
         document.getElementById('pin-screen').style.display='flex';
-      } else {startApp();}
+        if(window._pendingPin){const p=window._pendingPin;window._pendingPin=null;validatePin(p);}
+      } else {
+        startApp();
+      }
     } else {
+      me=null;window._authReady=true;window._pinShown=false;window._appStarted=false;
+      document.documentElement.setAttribute('data-boot','auth');
+      document.getElementById('pin-screen').style.display='none';
       document.getElementById('auth-screen').style.display='flex';
       document.getElementById('app').style.display='none';
     }
@@ -975,6 +1002,7 @@ function doLogin(){
 }
 function doLogout(){auth.signOut();closeSheet('sh-profile');}
 function startApp(){
+  window._appStarted=true;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('pin-screen').style.display='none';
   document.getElementById('app').style.display='block';
@@ -1003,7 +1031,6 @@ function applyViewOnlyMode(){
 function uid(){return me.uid;}
 
 // ── AMOUNT FORMATTING (comma every 3 digits) ──
-function fmtN(n){return Number(n||0).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtAmt(el){
   let v=el.value.replace(/[^0-9.]/g,'');
   const parts=v.split('.');
@@ -1080,13 +1107,12 @@ function acctBal(id){
     else if(t.type==='transfer'){if(t.accountId===id)b-=t.amount;if(t.toAccountId===id)b+=t.amount;}
   });
   CHEQS.filter(q=>q.accountId===id).forEach(q=>{
-    // Received: add when deposited or cleared
-    if(q.dir==='recv'&&(q.stage==='deposited'||q.stage==='cleared'))b+=q.amount;
-    // Issued: only reduce balance when cleared (i.e. cheque arrived at bank & cleared)
-    // The cheque 'date' field = date cheque arrives at bank / due date
+    // Balance only moves once a cheque is fully CLEARED — this matches real
+    // bank behaviour and keeps Home / Reconciliation / Reports in agreement.
+    // 'deposited'/'issued'/'returned' never touch the balance since the
+    // cheque was never actually honoured by the bank at that point.
+    if(q.dir==='recv'&&q.stage==='cleared')b+=q.amount;
     if(q.dir==='issue'&&q.stage==='cleared')b-=q.amount;
-    // Returned received cheque: reverse the deposit
-    if(q.dir==='recv'&&q.stage==='returned'&&!q.collectedBack)b-=q.amount;
   });
   return b;
 }
@@ -1112,7 +1138,7 @@ function editTxn(id){
   const t=TXNS.find(x=>x.id===id);if(!t)return;
   fillAcctSelects();
   sv('txn-edit-id',id);sv('txn-sh-title','Edit Transaction');
-  sv('txn-acct',t.accountId);sv('txn-type',t.type);sv('txn-amt',fmtN(t.amount));
+  sv('txn-acct',t.accountId);sv('txn-type',t.type);sv('txn-amt',fm(t.amount));
   sv('txn-date',t.date);sv('txn-desc',t.desc||'');sv('txn-ref',t.ref||'');
   txnTypeChange();if(t.toAccountId)sv('txn-to-acct',t.toAccountId);
   openSheet('sh-add-txn');
@@ -1247,6 +1273,8 @@ function openCheqDetail(id){
       btns+=`<button class="btn btn-success btn-sm" onclick="setStage('${id}','cleared')">✅ Mark Cleared</button>`;
       btns+=`<button class="btn btn-danger btn-sm" onclick="setStage('${id}','returned')">↩️ Mark Returned</button>`;
     }
+    if(q.stage==='cleared')
+      btns+=`<button class="btn btn-danger btn-sm" onclick="setStage('${id}','returned')">↩️ Mark Returned (Bounced)</button>`;
   }
   btns+=`<button class="btn btn-ghost btn-sm" onclick="editCheq('${id}')">✏️ Edit</button>`;
   btns+=`<button class="btn btn-danger btn-sm" onclick="delCheq('${id}')">🗑️ Delete</button>`;
@@ -1258,7 +1286,7 @@ function editCheq(id){
   const q=CHEQS.find(x=>x.id===id);if(!q)return;
   sv('cheq-edit-id',id);sv('cheq-dir',q.dir);
   document.getElementById('cheq-sh-title').textContent='Edit Cheque';
-  sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',fmtN(q.amount));
+  sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',fm(q.amount));
   sv('cheq-date',q.date);sv('cheq-bank',q.bank||'');sv('cheq-notes',q.notes||'');
   // Account no longer stored at entry level
   openSheet('sh-add-cheq');
@@ -1315,6 +1343,14 @@ function autoClear(){
       });
     }
   });
+  // Issued cheques move to Cleared only once their written date actually
+  // arrives — never at the moment they're entered into the system.
+  const td=today();
+  CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.date<=td).forEach(q=>{
+    c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
+      log('cheque',`Cheque #${q.no} auto-cleared on its due date`,'#22c55e');
+    });
+  });
 }
 
 // ── RECONCILIATION ──
@@ -1367,7 +1403,7 @@ function renderRecon(){
       cr:(t.type==='deposit'||t.type==='interest')?t.amount:(t.type==='transfer'&&t.toAccountId===reconAcct)?t.amount:0,
       dr:(t.type==='withdrawal'||t.type==='bank_charge')?t.amount:(t.type==='transfer'&&t.accountId===reconAcct)?t.amount:0
     })),
-    ...CHEQS.filter(q=>q.accountId===reconAcct&&(q.stage==='deposited'||q.stage==='cleared')).map(q=>({
+    ...CHEQS.filter(q=>q.accountId===reconAcct&&q.stage==='cleared').map(q=>({
       date:q.date,desc:`Cheque #${q.no} — ${q.party}`,
       cr:q.dir==='recv'?q.amount:0,dr:q.dir==='issue'?q.amount:0
     }))
@@ -1536,6 +1572,7 @@ function renderCheques(){
             ${q.stage==='returned'&&!q.collectedBack?'<span class="badge badge-red" style="margin-left:4px">⚠️ Uncollected</span>':''}
             ${q.stage==='deposited'&&q.depositedAt?`<span class="badge badge-blue" style="margin-left:4px">⏱ ~${Math.max(0,Math.floor((clearDeadline(q.depositedAt)-new Date())/3600000))}h to clear</span>`:''}
             ${q.stage==='transferred'?`<span class="badge badge-violet" style="margin-left:4px">→ ${es(q.transferTo||'?')}</span>`:''}
+            ${q.dir==='issue'&&q.stage==='issued'?`<span class="badge badge-gray" style="margin-left:4px">📅 Clears ${q.date}</span>`:''}
           </div>
         </div>
         <div class="cq-right">
@@ -1614,16 +1651,22 @@ function clearActivity(){
 
 function renderNotifs(){
   const notifs=[];
-  const toD=CHEQS.filter(q=>q.dir==='recv'&&q.stage==='received');
-  if(toD.length) notifs.push({icon:'📥',title:`${toD.length} cheque${toD.length>1?'s':''} ready to deposit`,
-    desc:toD.map(q=>q.party).join(', '),total:'Total: Rs. '+fm(toD.reduce((s,q)=>s+q.amount,0)),type:'amber'});
+  const td=today();
+  // Cheques that can actually be deposited *today* — received, not yet
+  // deposited, and not post-dated (bank won't take a future-dated cheque).
+  const toD=CHEQS.filter(q=>q.dir==='recv'&&q.stage==='received'&&q.date<=td);
+  const postDated=CHEQS.filter(q=>q.dir==='recv'&&q.stage==='received'&&q.date>td);
+  const toDTotal=toD.reduce((s,q)=>s+q.amount,0);
+  if(toD.length) notifs.push({icon:'📥',title:`${toD.length} cheque${toD.length>1?'s':''} can be deposited today`,
+    desc:toD.map(q=>q.party).join(', '),total:'Total: Rs. '+fm(toDTotal),type:'amber'});
+  if(postDated.length) notifs.push({icon:'🗓️',title:`${postDated.length} post-dated cheque${postDated.length>1?'s':''} waiting`,
+    desc:postDated.map(q=>`#${q.no} on ${q.date}`).join(' · '),type:'blue'});
   const ret=CHEQS.filter(q=>q.stage==='returned'&&!q.collectedBack);
   ret.forEach(q=>notifs.push({icon:'⚠️',title:`Returned cheque — money not collected`,
     desc:`#${q.no} from ${q.party} · Rs. ${fm(q.amount)}`,type:'red'}));
   const inC=CHEQS.filter(q=>q.stage==='deposited');
   if(inC.length) notifs.push({icon:'⏳',title:`${inC.length} cheque${inC.length>1?'s':''} in clearing`,
     desc:'Will auto-clear after 36 work-hours',total:'Rs. '+fm(inC.reduce((s,q)=>s+q.amount,0)),type:'blue'});
-  const td=today();
   const mat=CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.date<=td);
   if(mat.length) notifs.push({icon:'🔔',title:`${mat.length} issued cheque${mat.length>1?'s':''} may be presented today`,
     desc:mat.map(q=>`#${q.no} ${q.party}`).join(' · '),type:'amber'});
@@ -1640,6 +1683,33 @@ function renderNotifs(){
         ${n.total?`<div class="notif-total">${n.total}</div>`:''}
       </div>
     </div>`).join('');
+  notifyDepositTotal(toD.length,toDTotal);
+}
+
+// ── SYSTEM NOTIFICATION (deposit-today total) ──
+// Fires a real phone/browser notification, once per calendar day, when
+// there are cheques ready to deposit. GitHub Pages has no push server, so
+// this only fires while the app is open or resumed (not while fully
+// closed) — there is no way around that for a backend-less static PWA.
+function notifyDepositTotal(count,total){
+  if(!('Notification' in window)||!count)return;
+  const key='bb_dep_notif_'+today();
+  if(localStorage.getItem(key))return;
+  const fire=()=>{
+    try{
+      const body=`${count} cheque${count>1?'s':''} · Total Rs. ${fm(total)}`;
+      if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+        navigator.serviceWorker.ready.then(reg=>reg.showNotification('Cheques ready to deposit today',{body,icon:'icon.png',tag:'bb-deposit-today'}));
+      } else {
+        new Notification('Cheques ready to deposit today',{body,icon:'icon.png'});
+      }
+      localStorage.setItem(key,'1');
+    }catch(e){/* notifications not available on this platform */}
+  };
+  if(Notification.permission==='granted'){fire();}
+  else if(Notification.permission!=='denied'){
+    Notification.requestPermission().then(p=>{if(p==='granted')fire();});
+  }
 }
 
 // ── NAVIGATION ──
@@ -1707,7 +1777,7 @@ function doExport(){
 
 // ── UTILS ──
 function fillAcctSelects(){
-  ['txn-acct','txn-to-acct','cheq-acct','rs-acct'].forEach(id=>{
+  ['txn-acct','txn-to-acct','dep-acct','rs-acct'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     const cur=sel.value;
     sel.innerHTML=ACCTS.map(a=>`<option value="${a.id}">${es(a.name)}${a.bank?' — '+es(a.bank):''}</option>`).join('');
@@ -1784,14 +1854,13 @@ function doGenerateReport(){
         source:'txn'
       });
     });
-    // Cheques affecting this account
+    // Cheques affecting this account — only CLEARED cheques move real
+    // money, matching acctBal()/renderRecon() so all totals agree.
     CHEQS.filter(q=>q.accountId===acct.id&&q.date>=from&&q.date<=to).forEach(q=>{
-      if(q.dir==='recv'&&(q.stage==='deposited'||q.stage==='cleared'))
-        rows.push({date:q.depositDate||q.date,desc:`Cheque Deposit #${q.no} ${q.party}`,cr:q.amount,dr:0,source:'cheque'});
+      if(q.dir==='recv'&&q.stage==='cleared')
+        rows.push({date:q.depositDate||q.date,desc:`Cheque Cleared (Deposit) #${q.no} ${q.party}`,cr:q.amount,dr:0,source:'cheque'});
       if(q.dir==='issue'&&q.stage==='cleared')
-        rows.push({date:q.date,desc:`Cheque Issued #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
-      if(q.dir==='recv'&&q.stage==='returned'&&!q.collectedBack)
-        rows.push({date:q.date,desc:`Cheque Returned #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
+        rows.push({date:q.date,desc:`Cheque Cleared (Issued) #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
     });
     rows.sort((a,b)=>a.date.localeCompare(b.date));
     // Running balance - start from opening balance adjusted for pre-range txns
