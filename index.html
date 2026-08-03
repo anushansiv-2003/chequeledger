@@ -624,6 +624,25 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   </div>
 </div></div>
 
+<!-- Edit Account / Change Balance -->
+<div class="overlay" id="sh-edit-acct" onclick="oc(event,this)">
+<div class="sheet"><div class="sheet-handle"></div>
+  <div class="sheet-hdr"><div class="sheet-title">Edit Account</div><button class="sheet-close" onclick="closeSheet('sh-edit-acct')">✕</button></div>
+  <div class="sheet-body">
+    <input type="hidden" id="ea-id">
+    <div class="fgrp"><label>Account Name *</label><input id="ea-name" placeholder="e.g. Main Savings"></div>
+    <div class="fgrp"><label>Bank Name</label><input id="ea-bank" placeholder="e.g. Commercial Bank of Ceylon"></div>
+    <div class="fgrp"><label>Account Number</label><input id="ea-num" placeholder="Optional"></div>
+    <div class="fgrp"><label>Current Balance (Rs.)</label><input type="text" inputmode="decimal" id="ea-bal" placeholder="0.00" oninput="fmtAmt(this)">
+      <p class="hint">Change this to match your real bank balance. The difference is recorded as a balance adjustment and won't affect existing transactions or cheques.</p>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-edit-acct')">Cancel</button>
+    <button class="btn btn-primary" style="flex:2" onclick="doSaveAcctEdit()">Save Changes</button>
+  </div>
+</div></div>
+
 <!-- Add / Edit Transaction -->
 <div class="overlay" id="sh-add-txn" onclick="oc(event,this)">
 <div class="sheet"><div class="sheet-handle"></div>
@@ -849,6 +868,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <div class="fgrp"><label>Report Format</label>
       <select id="rpt-format">
         <option value="screen">View on Screen</option>
+        <option value="pdf">Download PDF (Bank Statement)</option>
         <option value="csv">Download CSV</option>
       </select>
     </div>
@@ -866,7 +886,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="sheet-body" id="rpt-view-body" style="padding:0"></div>
   <div class="sheet-footer">
     <button class="btn btn-ghost" style="flex:1" onclick="closeSheet('sh-report-view')">Close</button>
-    <button class="btn btn-primary" style="flex:2" onclick="downloadReport()">📥 Download CSV</button>
+    <button class="btn btn-ghost" style="flex:1" onclick="downloadReport()">📥 CSV</button>
+    <button class="btn btn-primary" style="flex:1" onclick="downloadStatementPDF()">📄 PDF</button>
   </div>
 </div></div>
 
@@ -874,6 +895,9 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<!-- PDF statement export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 'use strict';
 // ── VERSION ── (bump this on every update; drives auto-update detection)
@@ -1097,6 +1121,31 @@ function doAddAcct(){
     log('account',`Account added: ${name}`,'#4f80ff');
     closeSheet('sh-add-acct');toast('Account added ✓');
     ['aa-name','aa-bank','aa-num'].forEach(id=>sv(id,''));sv('aa-bal','0');
+  });
+}
+function openEditAcct(id){
+  if(guardVO())return;
+  if(guardStaffUpdate())return;
+  const a=ACCTS.find(x=>x.id===id);if(!a)return;
+  sv('ea-id',id);sv('ea-name',a.name||'');sv('ea-bank',a.bank||'');sv('ea-num',a.number||'');
+  sv('ea-bal',fm(acctBal(id)));
+  openSheet('sh-edit-acct');
+}
+function doSaveAcctEdit(){
+  if(guardVO())return;
+  if(guardStaffUpdate())return;
+  const id=g('ea-id');if(!id)return;
+  const a=ACCTS.find(x=>x.id===id);if(!a)return;
+  const name=g('ea-name').trim(),bank=g('ea-bank').trim(),num=g('ea-num').trim();
+  if(!name){toast('Account name is required');return;}
+  const newBal=parseAmt('ea-bal');
+  const curBal=acctBal(id);
+  const diff=newBal-curBal;
+  const newOpening=(a.openingBalance||0)+diff;
+  c('accounts').doc(id).update({name,bank,number:num,openingBalance:newOpening,updatedAt:fts()}).then(()=>{
+    if(Math.abs(diff)>=0.01)log('account',`Balance adjusted for ${name}: Rs. ${fm(curBal)} → Rs. ${fm(newBal)}`,'#f59e0b');
+    else log('account',`Account updated: ${name}`,'#4f80ff');
+    closeSheet('sh-edit-acct');toast('Account updated ✓');
   });
 }
 function acctBal(id){
@@ -1513,7 +1562,7 @@ function renderHome(){
   } else {
     el.innerHTML=ACCTS.map(a=>{
       const bal=acctBal(a.id);
-      return `<div class="acct-card" onclick="">
+      return `<div class="acct-card" onclick="openEditAcct('${a.id}')" style="cursor:pointer">
         <div class="acct-name">${es(a.name)}</div>
         <div class="acct-bank">${es(a.bank||'')}${a.number?' · Acc: '+es(a.number):''}</div>
         <div class="acct-bal${bal<0?' neg':''}">Rs. ${fm(bal)}</div>
@@ -1829,7 +1878,7 @@ function openSheet_reports(){
   const firstDay=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
   if(!document.getElementById('rpt-from').value)document.getElementById('rpt-from').value=firstDay;
   if(!document.getElementById('rpt-to').value)document.getElementById('rpt-to').value=today();
-  openSheet('sh-reports');
+  document.getElementById('sh-reports').classList.add('open');
 }
 function doGenerateReport(){
   const acctId=g('rpt-acct'),from=g('rpt-from'),to=g('rpt-to'),fmt=g('rpt-format');
@@ -1877,6 +1926,7 @@ function doGenerateReport(){
   });
 
   if(fmt==='csv'){closeSheet('sh-reports');downloadReport();return;}
+  if(fmt==='pdf'){closeSheet('sh-reports');downloadStatementPDF();return;}
   renderReportScreen();
   closeSheet('sh-reports');
   openSheet('sh-report-view');
@@ -1935,6 +1985,56 @@ function downloadReport(){
   const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download=`bankbook-report-${from}-to-${to}.csv`;a.click();
   toast('Report downloaded ✓');
+}
+function downloadStatementPDF(){
+  if(!_rptData.length){toast('Generate a report first');return;}
+  if(!window.jspdf){toast('PDF library still loading — try again in a moment');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'pt',format:'a4'});
+  const pageW=doc.internal.pageSize.getWidth();
+  const from=_rptData[0]?.from||g('rpt-from'),to=_rptData[0]?.to||g('rpt-to');
+  _rptData.forEach((d,idx)=>{
+    if(idx>0)doc.addPage();
+    // Statement header
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(20,20,20);
+    doc.text('Bank Book',40,45);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(90,90,90);
+    doc.text('Bank Statement',40,60);
+    doc.setDrawColor(210,210,210);doc.line(40,72,pageW-40,72);
+
+    doc.setFontSize(10);doc.setTextColor(40,40,40);
+    doc.setFont('helvetica','bold');doc.text(d.acct.name||'Account',40,92);
+    doc.setFont('helvetica','normal');
+    doc.text(`${d.acct.bank||''}${d.acct.number?'  ·  A/C: '+d.acct.number:''}`,40,106);
+    doc.text(`Statement Period: ${from} to ${to}`,40,120);
+    doc.text(`Opening Balance: Rs. ${fm(d.openBal)}`,40,134);
+    const closingBal=d.rows.length?d.rows[d.rows.length-1].bal:d.openBal;
+    doc.setFont('helvetica','bold');
+    doc.text(`Closing Balance: Rs. ${fm(closingBal)}`,pageW-40,134,{align:'right'});
+
+    const body=d.rows.length
+      ?d.rows.map(r=>[r.date,r.desc,r.dr>0?fm(r.dr):'',r.cr>0?fm(r.cr):'',fm(r.bal)])
+      :[['','No transactions in this period','','','']];
+    doc.autoTable({
+      startY:148,
+      head:[['Date','Description','Debit (Rs.)','Credit (Rs.)','Balance (Rs.)']],
+      body,
+      styles:{fontSize:9,cellPadding:5},
+      headStyles:{fillColor:[45,55,90],textColor:255,fontStyle:'bold'},
+      columnStyles:{2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},
+      margin:{left:40,right:40},
+      foot:[['','CLOSING BALANCE',
+        fm(d.rows.reduce((s,r)=>s+r.dr,0)),
+        fm(d.rows.reduce((s,r)=>s+r.cr,0)),
+        fm(closingBal)]],
+      footStyles:{fillColor:[235,237,245],textColor:20,fontStyle:'bold',halign:'right'}
+    });
+    const finalY=doc.lastAutoTable.finalY||160;
+    doc.setFontSize(8);doc.setTextColor(140,140,140);
+    doc.text(`Generated by Bank Book on ${today()}`,40,Math.min(finalY+20,doc.internal.pageSize.getHeight()-20));
+  });
+  doc.save(`bankbook-statement-${from}-to-${to}.pdf`);
+  toast('Statement PDF downloaded ✓');
 }
 
 // ── INIT ──
