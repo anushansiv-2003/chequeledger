@@ -172,6 +172,7 @@ a{color:var(--blue);text-decoration:none}
 
 /* ── CHEQUE ROW ── */
 .cq-row{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.cq-row.due-today{background:var(--green-dim);border-left:3px solid var(--green)}
 .cq-row:last-child{border-bottom:none}
 .cq-row{transition:background .15s ease}
 .cq-row:active{background:var(--surface2);transform:scale(.995)}
@@ -1611,14 +1612,17 @@ function renderCheques(){
       <span>${list.length} cheque${list.length>1?'s':''}</span>
       <span>Total: Rs. ${fm(total)}</span>
     </div>
-    ${list.map(q=>`
-      <div class="cq-row" onclick="openCheqDetail('${q.id}')">
+    ${list.map(q=>{
+      const dueToday=_cheqTab==='received'&&q.date===today();
+      return `
+      <div class="cq-row${dueToday?' due-today':''}" onclick="openCheqDetail('${q.id}')">
         <div class="cq-icon" style="background:var(--surface2)">${stageIcon[q.stage]||'📋'}</div>
         <div class="cq-body">
           <div class="cq-party">${es(q.party)}</div>
           <div class="cq-meta">#${es(q.no)} · ${q.date}${q.bank?' · '+es(q.bank):''}</div>
           <div style="margin-top:4px">
             <span class="badge ${stageBadge[q.stage]||'badge-gray'}">${q.stage}</span>
+            ${dueToday?'<span class="badge badge-green" style="margin-left:4px">✅ Deposit today</span>':''}
             ${q.stage==='returned'&&!q.collectedBack?'<span class="badge badge-red" style="margin-left:4px">⚠️ Uncollected</span>':''}
             ${q.stage==='deposited'&&q.depositedAt?`<span class="badge badge-blue" style="margin-left:4px">⏱ ~${Math.max(0,Math.floor((clearDeadline(q.depositedAt)-new Date())/3600000))}h to clear</span>`:''}
             ${q.stage==='transferred'?`<span class="badge badge-violet" style="margin-left:4px">→ ${es(q.transferTo||'?')}</span>`:''}
@@ -1629,7 +1633,7 @@ function renderCheques(){
           <div class="cq-amt ${q.dir==='recv'?'in':'out'}">Rs. ${fm(q.amount)}</div>
           <div style="font-size:11px;color:var(--t3);margin-top:3px">${q.dir==='recv'?'↓ In':'↑ Out'}</div>
         </div>
-      </div>`).join('')}
+      </div>`;}).join('')}
   `;
 }
 
