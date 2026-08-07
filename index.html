@@ -682,6 +682,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     <input type="hidden" id="cheq-edit-id">
     <input type="hidden" id="cheq-dir">
     <div class="fgrp"><label>Party Name *</label><input id="cheq-party" placeholder="Who gave / who received this cheque?"></div>
+    <div class="fgrp" id="cheq-acct-grp" style="display:none"><label>Issued From Account *</label><select id="cheq-acct"></select></div>
     <div class="frow">
       <div class="fgrp"><label>Cheque No. *</label><input id="cheq-no" placeholder="001234"></div>
       <div class="fgrp"><label>Amount (Rs.) *</label><input type="text" inputmode="decimal" id="cheq-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
@@ -1209,6 +1210,8 @@ function openAddCheque(dir){
   document.getElementById('cheq-sh-title').textContent=dir==='recv'?'Receive Cheque':'Issue Cheque';
   sv('cheq-date',today());
   ['cheq-party','cheq-no','cheq-bank','cheq-notes','cheq-amt'].forEach(id=>sv(id,''));
+  document.getElementById('cheq-acct-grp').style.display=dir==='issue'?'':'none';
+  if(dir==='issue'){fillAcctSelects();sv('cheq-acct','');}
   openSheet('sh-add-cheq');
 }
 function doSaveCheq(){
@@ -1216,8 +1219,15 @@ function doSaveCheq(){
   const eid=g('cheq-edit-id'),dir=g('cheq-dir'),party=g('cheq-party').trim(),no=g('cheq-no').trim(),
     amt=parseAmt('cheq-amt'),date=g('cheq-date'),bank=g('cheq-bank').trim(),notes=g('cheq-notes').trim();
   if(!party||!no||!amt||!date){toast('Fill party name, cheque no., amount and date');return;}
-  // No account stored at entry — account assigned at deposit time
-  const data={dir,party,no,bank,amount:amt,date,accountId:'',notes,updatedAt:fts()};
+  // Received cheques: account assigned later, at deposit time.
+  // Issued cheques: account must be picked now, since the cheque is drawn
+  // against a specific account from the moment it's written.
+  let acctId='';
+  if(dir==='issue'){
+    acctId=g('cheq-acct');
+    if(!acctId){toast('Select which account this cheque is drawn from');return;}
+  }
+  const data={dir,party,no,bank,amount:amt,date,accountId:acctId,notes,updatedAt:fts()};
   if(eid){
     c('cheques').doc(eid).update(data).then(()=>{log('cheque',`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,'#f59e0b');closeSheet('sh-add-cheq');toast('Updated ✓');});
   } else {
@@ -1339,7 +1349,8 @@ function editCheq(id){
   document.getElementById('cheq-sh-title').textContent='Edit Cheque';
   sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',fm(q.amount));
   sv('cheq-date',q.date);sv('cheq-bank',q.bank||'');sv('cheq-notes',q.notes||'');
-  // Account no longer stored at entry level
+  document.getElementById('cheq-acct-grp').style.display=q.dir==='issue'?'':'none';
+  if(q.dir==='issue'){fillAcctSelects();sv('cheq-acct',q.accountId||'');}
   openSheet('sh-add-cheq');
 }
 function delCheq(id){
@@ -1831,7 +1842,7 @@ function doExport(){
 
 // ── UTILS ──
 function fillAcctSelects(){
-  ['txn-acct','txn-to-acct','dep-acct','rs-acct'].forEach(id=>{
+  ['txn-acct','txn-to-acct','dep-acct','rs-acct','cheq-acct'].forEach(id=>{
     const sel=document.getElementById(id);if(!sel)return;
     const cur=sel.value;
     sel.innerHTML=ACCTS.map(a=>`<option value="${a.id}">${es(a.name)}${a.bank?' — '+es(a.bank):''}</option>`).join('');
