@@ -1613,7 +1613,7 @@ function renderCheques(){
       <span>Total: Rs. ${fm(total)}</span>
     </div>
     ${list.map(q=>{
-      const dueToday=_cheqTab==='received'&&q.date===today();
+      const dueToday=_cheqTab==='received'&&q.date<=today();
       return `
       <div class="cq-row${dueToday?' due-today':''}" onclick="openCheqDetail('${q.id}')">
         <div class="cq-icon" style="background:var(--surface2)">${stageIcon[q.stage]||'📋'}</div>
@@ -1622,7 +1622,7 @@ function renderCheques(){
           <div class="cq-meta">#${es(q.no)} · ${q.date}${q.bank?' · '+es(q.bank):''}</div>
           <div style="margin-top:4px">
             <span class="badge ${stageBadge[q.stage]||'badge-gray'}">${q.stage}</span>
-            ${dueToday?'<span class="badge badge-green" style="margin-left:4px">✅ Deposit today</span>':''}
+            ${dueToday?`<span class="badge badge-green" style="margin-left:4px">✅ ${q.date===today()?'Deposit today':'Ready to deposit'}</span>`:''}
             ${q.stage==='returned'&&!q.collectedBack?'<span class="badge badge-red" style="margin-left:4px">⚠️ Uncollected</span>':''}
             ${q.stage==='deposited'&&q.depositedAt?`<span class="badge badge-blue" style="margin-left:4px">⏱ ~${Math.max(0,Math.floor((clearDeadline(q.depositedAt)-new Date())/3600000))}h to clear</span>`:''}
             ${q.stage==='transferred'?`<span class="badge badge-violet" style="margin-left:4px">→ ${es(q.transferTo||'?')}</span>`:''}
