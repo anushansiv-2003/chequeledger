@@ -1921,10 +1921,12 @@ function doGenerateReport(){
     });
     // Cheques affecting this account — only CLEARED cheques move real
     // money, matching acctBal()/renderRecon() so all totals agree.
-    CHEQS.filter(q=>q.accountId===acct.id&&q.date>=from&&q.date<=to).forEach(q=>{
-      if(q.dir==='recv'&&q.stage==='cleared')
+    // Use the date the cheque actually moved money (deposit date for
+    // received cheques, the cheque date for issued) — not the receive date.
+    CHEQS.filter(q=>q.accountId===acct.id&&q.stage==='cleared'&&(q.dir==='recv'?(q.depositDate||q.date):q.date)>=from&&(q.dir==='recv'?(q.depositDate||q.date):q.date)<=to).forEach(q=>{
+      if(q.dir==='recv')
         rows.push({date:q.depositDate||q.date,desc:`Cheque Cleared (Deposit) #${q.no} ${q.party}`,cr:q.amount,dr:0,source:'cheque'});
-      if(q.dir==='issue'&&q.stage==='cleared')
+      if(q.dir==='issue')
         rows.push({date:q.date,desc:`Cheque Cleared (Issued) #${q.no} ${q.party}`,cr:0,dr:q.amount,source:'cheque'});
     });
     rows.sort((a,b)=>a.date.localeCompare(b.date));
@@ -1934,6 +1936,15 @@ function doGenerateReport(){
       if(t.type==='deposit'||t.type==='interest')openBal+=t.amount;
       else if(t.type==='withdrawal'||t.type==='bank_charge')openBal-=t.amount;
       else if(t.type==='transfer'){if(t.accountId===acct.id)openBal-=t.amount;if(t.toAccountId===acct.id)openBal+=t.amount;}
+    });
+    // ...and pre-range CLEARED cheques too — without this, cheques cleared
+    // before the report's "from" date were silently missing from the
+    // opening balance, so the report's closing balance drifted from the
+    // dashboard's acctBal() total (which counts all cleared cheques,
+    // regardless of date).
+    CHEQS.filter(q=>q.accountId===acct.id&&q.stage==='cleared'&&(q.dir==='recv'?(q.depositDate||q.date):q.date)<from).forEach(q=>{
+      if(q.dir==='recv')openBal+=q.amount;
+      if(q.dir==='issue')openBal-=q.amount;
     });
     let bal=openBal;
     const ledgerRows=rows.map(r=>{bal+=r.cr-r.dr;return{...r,bal};});
