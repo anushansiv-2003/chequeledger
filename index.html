@@ -331,7 +331,7 @@ a{color:var(--blue);text-decoration:none}
 /* ── ACTIVITY ── */
 .act-row{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);align-items:flex-start}
 .act-row:last-child{border-bottom:none}
-.act-pip{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.act-icon{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;margin-top:1px}
 .act-text{font-size:13px;font-weight:500;line-height:1.4;flex:1}
 .act-time{font-size:10px;color:var(--t3);margin-top:2px}
 
@@ -1109,9 +1109,9 @@ function setSyncState(s){
 }
 
 // ── ACTIVITY LOG ──
-function log(type,text,color){
+function log(type,text,color,icon){
   if(!db||!me)return;
-  c('activities').add({type,text,color:color||'#555d7e',ts:firebase.firestore.FieldValue.serverTimestamp(),user:me.email||''});
+  c('activities').add({type,text,color:color||'#555d7e',icon:icon||'📌',ts:firebase.firestore.FieldValue.serverTimestamp(),user:me.email||''});
 }
 
 // ── ACCOUNTS ──
@@ -1120,7 +1120,7 @@ function doAddAcct(){
   const name=g('aa-name').trim(),bank=g('aa-bank').trim(),num=g('aa-num').trim(),bal=parseFloat(g('aa-bal'))||0;
   if(!name){toast('Account name is required');return;}
   c('accounts').add({name,bank,number:num,openingBalance:bal,createdAt:fts()}).then(()=>{
-    log('account',`Account added: ${name}`,'#4f80ff');
+    log('account',`Account added: ${name}`,'#4f80ff','🏛️');
     closeSheet('sh-add-acct');toast('Account added ✓');
     ['aa-name','aa-bank','aa-num'].forEach(id=>sv(id,''));sv('aa-bal','0');
   });
@@ -1145,8 +1145,8 @@ function doSaveAcctEdit(){
   const diff=newBal-curBal;
   const newOpening=(a.openingBalance||0)+diff;
   c('accounts').doc(id).update({name,bank,number:num,openingBalance:newOpening,updatedAt:fts()}).then(()=>{
-    if(Math.abs(diff)>=0.01)log('account',`Balance adjusted for ${name}: Rs. ${fm(curBal)} → Rs. ${fm(newBal)}`,'#f59e0b');
-    else log('account',`Account updated: ${name}`,'#4f80ff');
+    if(Math.abs(diff)>=0.01)log('account',`Balance adjusted for ${name}: Rs. ${fm(curBal)} → Rs. ${fm(newBal)}`,'#f59e0b','⚖️');
+    else log('account',`Account updated: ${name}`,'#4f80ff','✏️');
     closeSheet('sh-edit-acct');toast('Account updated ✓');
   });
 }
@@ -1181,9 +1181,9 @@ function doSaveTxn(){
   const data={accountId:acct,type,amount:amt,date,desc,ref,toAccountId:type==='transfer'?toAcct:'',updatedAt:fts()};
   const an=ACCTS.find(a=>a.id===acct)?.name||acct;
   if(eid){
-    c('transactions').doc(eid).update(data).then(()=>{log('txn',`Transaction updated: ${desc||type} Rs.${fm(amt)} — ${an}`,'#f59e0b');closeSheet('sh-add-txn');toast('Updated ✓');});
+    c('transactions').doc(eid).update(data).then(()=>{log('txn',`Transaction updated: ${desc||type} Rs.${fm(amt)} — ${an}`,'#f59e0b','✏️');closeSheet('sh-add-txn');toast('Updated ✓');});
   } else {
-    c('transactions').add({...data,createdAt:fts()}).then(()=>{log('txn',`Transaction added: ${desc||type} Rs.${fm(amt)} — ${an}`,'#22c55e');closeSheet('sh-add-txn');toast('Saved ✓');});
+    c('transactions').add({...data,createdAt:fts()}).then(()=>{log('txn',`Transaction added: ${desc||type} Rs.${fm(amt)} — ${an}`,'#22c55e','💵');closeSheet('sh-add-txn');toast('Saved ✓');});
   }
 }
 function editTxn(id){
@@ -1200,7 +1200,7 @@ function delTxn(id){
   if(guardStaffUpdate())return;
   if(!confirm('Delete this transaction?'))return;
   const t=TXNS.find(x=>x.id===id);
-  c('transactions').doc(id).delete().then(()=>{log('txn',`Transaction deleted: ${t?.desc||t?.type}`,'#f43f5e');toast('Deleted');});
+  c('transactions').doc(id).delete().then(()=>{log('txn',`Transaction deleted: ${t?.desc||t?.type} Rs.${fm(t?.amount||0)}`,'#f43f5e','🗑️');toast('Deleted');});
 }
 
 // ── CHEQUES ──
@@ -1229,10 +1229,10 @@ function doSaveCheq(){
   }
   const data={dir,party,no,bank,amount:amt,date,accountId:acctId,notes,updatedAt:fts()};
   if(eid){
-    c('cheques').doc(eid).update(data).then(()=>{log('cheque',`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,'#f59e0b');closeSheet('sh-add-cheq');toast('Updated ✓');});
+    c('cheques').doc(eid).update(data).then(()=>{log('cheque',`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,'#f59e0b','✏️');closeSheet('sh-add-cheq');toast('Updated ✓');});
   } else {
     c('cheques').add({...data,stage:dir==='recv'?'received':'issued',createdAt:fts()}).then(()=>{
-      log('cheque',`Cheque ${dir==='recv'?'received':'issued'}: #${no} ${party} Rs.${fm(amt)}`,'#4f80ff');
+      log('cheque',`Cheque ${dir==='recv'?'received':'issued'}: #${no} ${party} Rs.${fm(amt)}`,'#4f80ff',dir==='recv'?'📥':'📤');
       closeSheet('sh-add-cheq');toast('Cheque saved ✓');
     });
   }
@@ -1258,7 +1258,7 @@ function doDeposit(){
     stage:'deposited',accountId:acct,depositedAt:new Date().toISOString(),
     depositDate:date,depositNotes:notes,updatedAt:fts()
   }).then(()=>{
-    log('cheque',`Cheque #${q?.no} deposited to ${ACCTS.find(a=>a.id===acct)?.name}`,'#4f80ff');
+    log('cheque',`Cheque #${q?.no} deposited to ${ACCTS.find(a=>a.id===acct)?.name} — Rs. ${fm(q?.amount||0)}`,'#4f80ff','🏦');
     closeSheet('sh-deposit');toast('Cheque deposited ✓');
   });
 }
@@ -1267,7 +1267,17 @@ function setStage(id,stage,extra={}){
   if(IS_STAFF&&['cleared','returned'].includes(stage)){toast('Staff cannot change cheque status');return;}
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({stage,...extra,updatedAt:fts()}).then(()=>{
-    log('cheque',`Cheque #${q?.no} → ${stage}`,'#a78bfa');
+    let icon='📌',text=`Cheque #${q?.no} → ${stage}`,color='#a78bfa';
+    if(stage==='cleared'){
+      icon=q?.dir==='recv'?'✅📥':'✅📤';
+      text=`Cheque #${q?.no} cleared (${q?.dir==='recv'?'Deposit':'Issued'}) — Rs. ${fm(q?.amount||0)}`;
+      color='#22c55e';
+    } else if(stage==='returned'){
+      icon='↩️';
+      text=`Cheque #${q?.no} returned (${q?.dir==='recv'?'Deposit':'Issued'}) — Rs. ${fm(q?.amount||0)}`;
+      color='#ef4444';
+    }
+    log('cheque',text,color,icon);
     closeSheet('sh-cheq-detail');toast('Status: '+stage);
   });
 }
@@ -1358,7 +1368,7 @@ function delCheq(id){
   if(guardStaffUpdate())return;
   if(!confirm('Delete this cheque?'))return;
   const q=CHEQS.find(x=>x.id===id);
-  c('cheques').doc(id).delete().then(()=>{log('cheque',`Cheque #${q?.no} deleted`,'#f43f5e');closeSheet('sh-cheq-detail');toast('Deleted');});
+  c('cheques').doc(id).delete().then(()=>{log('cheque',`Cheque #${q?.no} deleted — Rs. ${fm(q?.amount||0)}`,'#f43f5e','🗑️');closeSheet('sh-cheq-detail');toast('Deleted');});
 }
 
 // ── TRANSFER ──
@@ -1369,7 +1379,7 @@ function doTransfer(){
   if(!to){toast('Enter the party name');return;}
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({stage:'transferred',transferTo:to,transferDate:date,transferNotes:notes,updatedAt:fts()}).then(()=>{
-    log('cheque',`Cheque #${q?.no} transferred to ${to}`,'#a78bfa');closeSheet('sh-transfer');toast('Transferred to '+to+' ✓');
+    log('cheque',`Cheque #${q?.no} transferred to ${to} — Rs. ${fm(q?.amount||0)}`,'#a78bfa','📨');closeSheet('sh-transfer');toast('Transferred to '+to+' ✓');
   });
 }
 
@@ -1380,7 +1390,7 @@ function doCollect(){
   const id=g('col-cheq-id'),date=g('col-date'),method=g('col-method'),notes=g('col-notes').trim();
   const q=CHEQS.find(x=>x.id===id);
   c('cheques').doc(id).update({collectedBack:true,collectedDate:date,collectedMethod:method,collectedNotes:notes,updatedAt:fts()}).then(()=>{
-    log('cheque',`Returned cheque #${q?.no} — money collected back via ${method}`,'#22c55e');closeSheet('sh-collect');toast('Marked as collected ✓');
+    log('cheque',`Returned cheque #${q?.no} — money collected back via ${method} — Rs. ${fm(q?.amount||0)}`,'#22c55e','💰');closeSheet('sh-collect');toast('Marked as collected ✓');
   });
 }
 
@@ -1396,22 +1406,30 @@ function clearDeadline(depositedAt){
   }
   return d;
 }
+// In-flight guard: autoClear() runs on every Firestore snapshot (including
+// each write it triggers itself). Without this guard, a cheque already
+// being auto-cleared could get matched again before its own update lands
+// locally, firing a second/third redundant update+log for the same event
+// — which is why the same clearance used to show up 2-3x in Activity.
+const _autoClearing=new Set();
 function autoClear(){
   const now=new Date();
-  CHEQS.filter(q=>q.stage==='deposited'&&q.depositedAt).forEach(q=>{
+  CHEQS.filter(q=>q.stage==='deposited'&&q.depositedAt&&!_autoClearing.has(q.id)).forEach(q=>{
     if(now>=clearDeadline(q.depositedAt)){
+      _autoClearing.add(q.id);
       c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
-        log('cheque',`Cheque #${q.no} auto-cleared (36 work-hours passed)`,'#22c55e');
-      });
+        log('cheque',`Cheque #${q.no} cleared (Deposit, auto — 36 work-hrs) — Rs. ${fm(q.amount)}`,'#22c55e','✅📥');
+      }).finally(()=>_autoClearing.delete(q.id));
     }
   });
   // Issued cheques move to Cleared only once their written date actually
   // arrives — never at the moment they're entered into the system.
   const td=today();
-  CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.date<=td).forEach(q=>{
+  CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.date<=td&&!_autoClearing.has(q.id)).forEach(q=>{
+    _autoClearing.add(q.id);
     c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
-      log('cheque',`Cheque #${q.no} auto-cleared on its due date`,'#22c55e');
-    });
+      log('cheque',`Cheque #${q.no} cleared (Issued, auto — due date reached) — Rs. ${fm(q.amount)}`,'#22c55e','✅📤');
+    }).finally(()=>_autoClearing.delete(q.id));
   });
 }
 
@@ -1701,7 +1719,7 @@ function renderAct(){
     <div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;background:var(--surface2);border-bottom:1px solid var(--border)">${date}</div>
     ${items.map(a=>`
       <div class="act-row">
-        <div class="act-pip" style="background:${a.color||'#555d7e'}"></div>
+        <div class="act-icon" style="background:${a.color||'#555d7e'}22;color:${a.color||'#555d7e'}">${a.icon||'📌'}</div>
         <div style="flex:1">
           <div class="act-text">${es(a.text)}</div>
           <div class="act-time">${a._ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})} · ${es(a.user||'')}</div>
@@ -1837,7 +1855,7 @@ function doExport(){
   TXNS.forEach(t=>{const a=ACCTS.find(x=>x.id===t.accountId);csv+=`Transaction,${t.type==='deposit'||t.type==='interest'?'CR':'DR'},${t.date},"${t.desc||t.type}",,, ${t.amount},,,"${a?.name||''}"\n`;});
   const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');
   a.href=URL.createObjectURL(b);a.download='bankbook-'+today()+'.csv';a.click();
-  log('account','CSV exported','#555d7e');
+  log('account','CSV exported','#555d7e','📄');
 }
 
 // ── UTILS ──
