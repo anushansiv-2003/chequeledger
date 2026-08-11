@@ -1661,7 +1661,6 @@ function renderCheques(){
           <div class="cq-meta">#${es(q.no)} · ${_cheqTab==='cleared'?`Cleared ${clearedDate?new Date(clearedDate).toLocaleDateString():(q.depositDate||q.date)}`:q.date}${q.bank?' · '+es(q.bank):''}</div>
           <div style="margin-top:4px">
             <span class="badge ${stageBadge[q.stage]||'badge-gray'}">${q.stage}</span>
-            ${_cheqTab==='cleared'?`<span class="badge ${q.dir==='recv'?'badge-blue':'badge-amber'}" style="margin-left:4px">${q.dir==='recv'?'📥 Deposit':'📤 Issued'}</span>`:''}
             ${dueToday?`<span class="badge badge-green" style="margin-left:4px">✅ ${q.date===today()?'Deposit today':'Ready to deposit'}</span>`:''}
             ${q.stage==='returned'&&!q.collectedBack?'<span class="badge badge-red" style="margin-left:4px">⚠️ Uncollected</span>':''}
             ${q.stage==='deposited'&&q.depositedAt?`<span class="badge badge-blue" style="margin-left:4px">⏱ ~${Math.max(0,Math.floor((clearDeadline(q.depositedAt)-new Date())/3600000))}h to clear</span>`:''}
