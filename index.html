@@ -1266,6 +1266,7 @@ function setStage(id,stage,extra={}){
   if(guardVO())return;
   if(IS_STAFF&&['cleared','returned'].includes(stage)){toast('Staff cannot change cheque status');return;}
   const q=CHEQS.find(x=>x.id===id);
+  if(stage==='cleared')extra.clearedAt=new Date().toISOString();
   c('cheques').doc(id).update({stage,...extra,updatedAt:fts()}).then(()=>{
     let icon='📌',text=`Cheque #${q?.no} → ${stage}`,color='#a78bfa';
     if(stage==='cleared'){
@@ -1417,7 +1418,7 @@ function autoClear(){
   CHEQS.filter(q=>q.stage==='deposited'&&q.depositedAt&&!_autoClearing.has(q.id)).forEach(q=>{
     if(now>=clearDeadline(q.depositedAt)){
       _autoClearing.add(q.id);
-      c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
+      c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),clearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
         log('cheque',`Cheque #${q.no} cleared (Deposit, auto — 36 work-hrs) — Rs. ${fm(q.amount)}`,'#22c55e','✅📥');
       }).finally(()=>_autoClearing.delete(q.id));
     }
@@ -1427,7 +1428,7 @@ function autoClear(){
   const td=today();
   CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.date<=td&&!_autoClearing.has(q.id)).forEach(q=>{
     _autoClearing.add(q.id);
-    c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
+    c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),clearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
       log('cheque',`Cheque #${q.no} cleared (Issued, auto — due date reached) — Rs. ${fm(q.amount)}`,'#22c55e','✅📤');
     }).finally(()=>_autoClearing.delete(q.id));
   });
@@ -1627,11 +1628,19 @@ function setTab(el,tab){
 }
 function renderCheques(){
   const el=document.getElementById('cheq-list');
-  const list=CHEQS.filter(q=>{
+  let list=CHEQS.filter(q=>{
     if(_cheqTab==='received')return q.dir==='recv'&&q.stage==='received';
     if(_cheqTab==='issued')return q.dir==='issue'&&q.stage==='issued';
     return q.stage===_cheqTab;
   });
+  if(_cheqTab==='cleared'){
+    // Sort by the date the cheque actually cleared (most recent first).
+    // clearedAt/autoClearedAt is set at the moment of clearing; older
+    // records saved before this field existed fall back to their
+    // deposit/cheque date so they still sort sensibly.
+    const clearDate=q=>q.clearedAt||q.autoClearedAt||q.depositDate||q.date;
+    list=[...list].sort((a,b)=>clearDate(b).localeCompare(clearDate(a)));
+  }
   if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nothing here</div><div class="empty-sub">No cheques in this category</div></div>`;return;}
   const total=list.reduce((s,q)=>s+q.amount,0);
   const stageBadge={received:'badge-blue',issued:'badge-amber',deposited:'badge-blue',cleared:'badge-green',returned:'badge-red',transferred:'badge-violet'};
@@ -1643,14 +1652,16 @@ function renderCheques(){
     </div>
     ${list.map(q=>{
       const dueToday=_cheqTab==='received'&&q.date<=today();
+      const clearedDate=q.clearedAt||q.autoClearedAt;
       return `
       <div class="cq-row${dueToday?' due-today':''}" onclick="openCheqDetail('${q.id}')">
         <div class="cq-icon" style="background:var(--surface2)">${stageIcon[q.stage]||'📋'}</div>
         <div class="cq-body">
           <div class="cq-party">${es(q.party)}</div>
-          <div class="cq-meta">#${es(q.no)} · ${q.date}${q.bank?' · '+es(q.bank):''}</div>
+          <div class="cq-meta">#${es(q.no)} · ${_cheqTab==='cleared'?`Cleared ${clearedDate?new Date(clearedDate).toLocaleDateString():(q.depositDate||q.date)}`:q.date}${q.bank?' · '+es(q.bank):''}</div>
           <div style="margin-top:4px">
             <span class="badge ${stageBadge[q.stage]||'badge-gray'}">${q.stage}</span>
+            ${_cheqTab==='cleared'?`<span class="badge ${q.dir==='recv'?'badge-blue':'badge-amber'}" style="margin-left:4px">${q.dir==='recv'?'📥 Deposit':'📤 Issued'}</span>`:''}
             ${dueToday?`<span class="badge badge-green" style="margin-left:4px">✅ ${q.date===today()?'Deposit today':'Ready to deposit'}</span>`:''}
             ${q.stage==='returned'&&!q.collectedBack?'<span class="badge badge-red" style="margin-left:4px">⚠️ Uncollected</span>':''}
             ${q.stage==='deposited'&&q.depositedAt?`<span class="badge badge-blue" style="margin-left:4px">⏱ ~${Math.max(0,Math.floor((clearDeadline(q.depositedAt)-new Date())/3600000))}h to clear</span>`:''}
