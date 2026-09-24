@@ -1745,6 +1745,24 @@ function clearActivity(){
 function renderNotifs(){
   const notifs=[];
   const td=today();
+  // Balance shortfall check: for every account, add up cheques still
+  // sitting in 'issued' (not yet cleared) — these are committed outflows
+  // that WILL hit the balance once they clear. If that total exceeds what's
+  // currently in the account, flag exactly how much more needs to be added
+  // before those cheques are presented, so a shortfall is caught ahead of
+  // time instead of after a cheque bounces.
+  ACCTS.forEach(a=>{
+    const pending=CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.accountId===a.id);
+    if(!pending.length)return;
+    const pendingTotal=pending.reduce((s,q)=>s+q.amount,0);
+    const bal=acctBal(a.id);
+    if(pendingTotal>bal){
+      const short=pendingTotal-bal;
+      notifs.push({icon:'🚨',title:`${es(a.name)}: Rs. ${fm(short)} short for upcoming cheques`,
+        desc:`${pending.length} issued cheque${pending.length>1?'s':''} pending (Rs. ${fm(pendingTotal)}) vs current balance Rs. ${fm(bal)}`,
+        total:`Add Rs. ${fm(short)} to cover all issued cheques`,type:'red'});
+    }
+  });
   // Cheques that can actually be deposited *today* — received, not yet
   // deposited, and not post-dated (bank won't take a future-dated cheque).
   const toD=CHEQS.filter(q=>q.dir==='recv'&&q.stage==='received'&&q.date<=td);
