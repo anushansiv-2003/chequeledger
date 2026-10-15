@@ -905,7 +905,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <script>
 'use strict';
 // ── VERSION ── (bump this on every update; drives auto-update detection)
-const APP_VERSION='3.2.0';
+const APP_VERSION='3.2.1';
 // ── CONFIG ──
 const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book-afedf.firebaseapp.com",
   projectId:"bank-book-afedf",storageBucket:"bank-book-afedf.firebasestorage.app",
@@ -1707,6 +1707,15 @@ function renderCheques(){
       <span>${list.length} cheque${list.length>1?'s':''}</span>
       <span>Total: Rs. ${fm(total)}</span>
     </div>
+    ${_cheqTab==='cleared'?(()=>{
+      const inc=list.filter(q=>q.dir==='recv').reduce((s,q)=>s+q.amount,0);
+      const out=list.filter(q=>q.dir==='issue').reduce((s,q)=>s+q.amount,0);
+      const net=inc-out;
+      return `<div style="display:flex;gap:8px;margin:8px 0 10px;font-size:12px;font-weight:700;text-align:center">
+        <div style="flex:1;padding:8px 6px;border-radius:10px;background:var(--surface2)"><div style="color:var(--t3);font-weight:600">↓ Received</div><div style="color:var(--green)">Rs. ${fm(inc)}</div></div>
+        <div style="flex:1;padding:8px 6px;border-radius:10px;background:var(--surface2)"><div style="color:var(--t3);font-weight:600">↑ Issued</div><div style="color:var(--red,#ef4444)">Rs. ${fm(out)}</div></div>
+        <div style="flex:1;padding:8px 6px;border-radius:10px;background:var(--surface2)"><div style="color:var(--t3);font-weight:600">Net</div><div>${net<0?'−':''}Rs. ${fm(Math.abs(net))}</div></div>
+      </div>`;})():''}
     ${list.map(q=>{
       const dueToday=_cheqTab==='received'&&q.date<=today();
       const clearedDate=q.clearedAt||q.autoClearedAt;
