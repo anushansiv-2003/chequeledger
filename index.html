@@ -681,8 +681,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   <div class="sheet-body">
     <input type="hidden" id="cheq-edit-id">
     <input type="hidden" id="cheq-dir">
+    <div class="fgrp" id="cheq-stage-grp" style="display:none"><label>Status</label><select id="cheq-stage" onchange="onCheqStageChange()"></select></div>
+    <div class="fgrp" id="cheq-transfer-grp" style="display:none"><label>Transferred To *</label><input id="cheq-transfer-to" placeholder="Party name"></div>
     <div class="fgrp"><label>Party Name *</label><input id="cheq-party" placeholder="Who gave / who received this cheque?"></div>
-    <div class="fgrp" id="cheq-acct-grp" style="display:none"><label>Issued From Account *</label><select id="cheq-acct"></select></div>
+    <div class="fgrp" id="cheq-acct-grp" style="display:none"><label id="cheq-acct-lbl">Issued From Account *</label><select id="cheq-acct"></select></div>
     <div class="frow">
       <div class="fgrp"><label>Cheque No. *</label><input id="cheq-no" placeholder="001234"></div>
       <div class="fgrp"><label>Amount (Rs.) *</label><input type="text" inputmode="decimal" id="cheq-amt" placeholder="0.00" oninput="fmtAmt(this)"></div>
@@ -903,7 +905,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 <script>
 'use strict';
 // ── VERSION ── (bump this on every update; drives auto-update detection)
-const APP_VERSION='3.1.0';
+const APP_VERSION='3.2.0';
 // ── CONFIG ──
 const FB={apiKey:"AIzaSyCYKocj-4d7CAlqXiSpLjgO3njqNKV2x9E",authDomain:"bank-book-afedf.firebaseapp.com",
   projectId:"bank-book-afedf",storageBucket:"bank-book-afedf.firebasestorage.app",
@@ -1211,6 +1213,9 @@ function openAddCheque(dir){
   sv('cheq-date',today());
   ['cheq-party','cheq-no','cheq-bank','cheq-notes','cheq-amt'].forEach(id=>sv(id,''));
   document.getElementById('cheq-acct-grp').style.display=dir==='issue'?'':'none';
+  document.getElementById('cheq-acct-lbl').textContent='Issued From Account *';
+  document.getElementById('cheq-stage-grp').style.display='none';
+  document.getElementById('cheq-transfer-grp').style.display='none';
   if(dir==='issue'){fillAcctSelects();sv('cheq-acct','');}
   openSheet('sh-add-cheq');
 }
@@ -1229,7 +1234,45 @@ function doSaveCheq(){
   }
   const data={dir,party,no,bank,amount:amt,date,accountId:acctId,notes,updatedAt:fts()};
   if(eid){
-    c('cheques').doc(eid).update(data).then(()=>{log('cheque',`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,'#f59e0b','✏️');closeSheet('sh-add-cheq');toast('Updated ✓');});
+    const old=CHEQS.find(x=>x.id===eid);
+    const newStage=g('cheq-stage')||old?.stage;
+    const changed=old&&newStage&&newStage!==old.stage;
+    if(dir==='recv')data.accountId=old?.accountId||'';  // keep deposit account on plain edits
+    let logText=`Cheque #${no} updated: ${party} Rs.${fm(amt)}`,logColor='#f59e0b',logIcon='✏️';
+    if(changed){
+      if(IS_STAFF){toast('Staff cannot change cheque status');return;}
+      const DEL=firebase.firestore.FieldValue.delete();
+      const nowIso=new Date().toISOString();
+      // received-cheque account: needed once it has been deposited
+      if(dir==='recv'){
+        if(['deposited','cleared','returned'].includes(newStage)){
+          acctId=g('cheq-acct')||old.accountId||'';
+          if(!acctId){toast('Select the account this cheque was deposited to');return;}
+          data.accountId=acctId;
+        } else data.accountId=old.accountId||'';
+      }
+      data.stage=newStage;
+      // clean up fields that belonged to the previous stage
+      if(old.stage==='cleared'){data.clearedAt=DEL;data.autoClearedAt=DEL;}
+      if(old.stage==='returned'){data.collectedBack=DEL;data.collectedDate=DEL;data.collectedMethod=DEL;data.collectedNotes=DEL;}
+      if(old.stage==='transferred'){data.transferTo=DEL;data.transferDate=DEL;data.transferNotes=DEL;}
+      if(old.stage==='deposited'&&newStage==='received'){data.depositedAt=DEL;data.depositDate=DEL;data.depositNotes=DEL;}
+      data.noAutoClear=DEL;
+      if(newStage==='cleared'){data.clearedAt=nowIso;if(!old.depositedAt&&dir==='recv'){data.depositedAt=nowIso;}}
+      if(newStage==='deposited'){data.depositedAt=nowIso;data.depositDate=today();}
+      if(newStage==='returned'&&!old.depositedAt&&dir==='recv'){data.depositedAt=nowIso;}
+      if(newStage==='transferred'){
+        const to=g('cheq-transfer-to').trim();
+        if(!to){toast('Enter the party name it was transferred to');return;}
+        data.transferTo=to;data.transferDate=today();
+      }
+      // moving an issued cheque back to "issued" must not instantly re-clear
+      if(newStage==='issued')data.noAutoClear=true;
+      logText=`Cheque #${no} status changed: ${old.stage} → ${newStage} — Rs. ${fm(amt)}`;logColor='#a78bfa';logIcon='🔄';
+      if(newStage==='cleared'){logColor='#22c55e';logIcon=dir==='recv'?'✅📥':'✅📤';}
+      if(newStage==='returned'){logColor='#ef4444';logIcon='↩️';}
+    }
+    c('cheques').doc(eid).update(data).then(()=>{log('cheque',logText,logColor,logIcon);closeSheet('sh-add-cheq');toast(changed?'Status: '+newStage+' ✓':'Updated ✓');});
   } else {
     c('cheques').add({...data,stage:dir==='recv'?'received':'issued',createdAt:fts()}).then(()=>{
       log('cheque',`Cheque ${dir==='recv'?'received':'issued'}: #${no} ${party} Rs.${fm(amt)}`,'#4f80ff',dir==='recv'?'📥':'📤');
@@ -1360,9 +1403,23 @@ function editCheq(id){
   document.getElementById('cheq-sh-title').textContent='Edit Cheque';
   sv('cheq-party',q.party);sv('cheq-no',q.no);sv('cheq-amt',fm(q.amount));
   sv('cheq-date',q.date);sv('cheq-bank',q.bank||'');sv('cheq-notes',q.notes||'');
-  document.getElementById('cheq-acct-grp').style.display=q.dir==='issue'?'':'none';
-  if(q.dir==='issue'){fillAcctSelects();sv('cheq-acct',q.accountId||'');}
+  const stages=q.dir==='recv'?['received','deposited','cleared','returned','transferred']:['issued','cleared','returned'];
+  if(!stages.includes(q.stage))stages.push(q.stage);
+  const ssel=document.getElementById('cheq-stage');
+  ssel.innerHTML=stages.map(x=>`<option value="${x}">${x.charAt(0).toUpperCase()+x.slice(1)}</option>`).join('');
+  ssel.value=q.stage;
+  document.getElementById('cheq-stage-grp').style.display='';
+  sv('cheq-transfer-to',q.transferTo||'');
+  fillAcctSelects();sv('cheq-acct',q.accountId||'');
+  document.getElementById('cheq-acct-lbl').textContent=q.dir==='issue'?'Issued From Account *':'Deposited To Account *';
+  onCheqStageChange();
   openSheet('sh-add-cheq');
+}
+function onCheqStageChange(){
+  const dir=g('cheq-dir'),st=g('cheq-stage');
+  const showAcct=dir==='issue'||['deposited','cleared','returned'].includes(st);
+  document.getElementById('cheq-acct-grp').style.display=showAcct?'':'none';
+  document.getElementById('cheq-transfer-grp').style.display=(dir==='recv'&&st==='transferred')?'':'none';
 }
 function delCheq(id){
   if(guardVO())return;
@@ -1426,7 +1483,7 @@ function autoClear(){
   // Issued cheques move to Cleared only once their written date actually
   // arrives — never at the moment they're entered into the system.
   const td=today();
-  CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&q.date<=td&&!_autoClearing.has(q.id)).forEach(q=>{
+  CHEQS.filter(q=>q.dir==='issue'&&q.stage==='issued'&&!q.noAutoClear&&q.date<=td&&!_autoClearing.has(q.id)).forEach(q=>{
     _autoClearing.add(q.id);
     c('cheques').doc(q.id).update({stage:'cleared',autoClearedAt:now.toISOString(),clearedAt:now.toISOString(),updatedAt:fts()}).then(()=>{
       log('cheque',`Cheque #${q.no} cleared (Issued, auto — due date reached) — Rs. ${fm(q.amount)}`,'#22c55e','✅📤');
